@@ -1,50 +1,254 @@
-# Welcome to your Expo app 👋
+<div align="center">
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# 💜 PulseFit
 
-## Get started
+### Your friendly fitness companion.
 
-1. Install dependencies
+A modern fitness app that helps you build healthy habits through nutrition tracking, workout logging, hydration monitoring, progress analytics, and motivational coaching.
 
-   ```bash
-   npm install
-   ```
+Designed to feel like a supportive gym buddy—not another boring calorie tracker.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+![Expo](https://img.shields.io/badge/Expo-SDK%2054-000020?style=for-the-badge&logo=expo)
+![React Native](https://img.shields.io/badge/React%20Native-TypeScript-61DAFB?style=for-the-badge&logo=react)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-In the output, you'll find options to open the app in a
+</div>
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## ✨ About PulseFit
 
-## Get a fresh project
+PulseFit is a modern fitness companion focused on making healthy habits enjoyable.
 
-When you're ready, run:
+Instead of overwhelming users with complicated dashboards, PulseFit combines clean design, playful companions, smooth animations, and intelligent tracking to make fitness feel motivating and rewarding.
 
-```bash
-npm run reset-project
+---
+
+## 🎯 Features
+
+### 🍽️ Nutrition Tracking
+
+- Breakfast
+- Lunch
+- Dinner
+- Snacks
+- Calories
+- Protein
+- Carbs
+- Fat
+
+---
+
+### 💧 Water Tracking
+
+- Daily hydration goal
+- One-tap quick add
+- Water history
+- Smart reminders
+
+---
+
+### 🏋️ Workout Tracking
+
+- Workout logging
+- Duration
+- Calories burned
+- Categories
+- Notes
+
+---
+
+### ⚖️ Weight Progress
+
+- Daily logs
+- Weekly trends
+- Monthly insights
+- Progress charts
+
+---
+
+### 📈 Dashboard
+
+- Daily Overview
+- Calories
+- Protein
+- Water
+- Workout
+- Goals
+- Streaks
+- Quick Actions
+
+---
+
+### 🤖 Companion System
+
+Cute animated companions help users stay motivated.
+
+- 💧 Droppy — Hydration
+- 🥚 Eggsy — Protein
+- 🥦 Brocco — Nutrition
+- 🔥 Blaze — Workout
+- 🌙 Luna — Recovery
+- ❤️ Pulse — Your personal fitness coach
+
+---
+
+## 🚀 Tech Stack
+
+### Mobile
+
+- Expo SDK 54
+- React Native
+- Expo Router
+- TypeScript
+
+### Backend
+
+- Supabase
+- PostgreSQL
+- Supabase Auth
+
+### State Management
+
+- Zustand
+- TanStack Query
+
+### Forms
+
+- React Hook Form
+- Zod
+
+### Styling
+
+- NativeWind
+- Reanimated
+- Gesture Handler
+
+---
+
+## 🏗️ Architecture
+
+```text
+app/
+assets/
+components/
+constants/
+features/
+hooks/
+providers/
+services/
+store/
+theme/
+types/
+utils/
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Feature-first architecture with reusable components and scalable project organization.
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🎨 Design Philosophy
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+PulseFit focuses on:
 
-## Join the community
+- Premium UI
+- Soft rounded cards
+- Friendly mascots
+- Floating navigation
+- Smooth animations
+- Accessibility
+- Dark mode support
+- Minimal user effort
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 📱 Screens
+
+- Splash
+- Onboarding
+- Authentication
+- Dashboard
+- Food Tracking
+- Water Tracker
+- Workout Tracker
+- Weight Progress
+- Analytics
+- Profile
+- Settings
+
+---
+
+## 🛣️ Roadmap
+
+- [x] Project Initialization
+- [x] Application Architecture
+- [x] Design System
+- [ ] Authentication
+- [ ] Dashboard
+- [ ] Nutrition Tracking
+- [ ] Water Tracking
+- [ ] Workout Tracking
+- [ ] Weight Tracking
+- [ ] Progress Analytics
+- [ ] AI Coach
+- [ ] Notifications
+- [ ] Gamification
+- [ ] Offline Support
+- [ ] Production Release
+
+---
+
+## 📦 Getting Started
+
+Clone the repository
+
+```bash
+git clone https://github.com/yourusername/PulseFit.git
+```
+
+Install dependencies
+
+```bash
+npm install
+```
+
+Start the development server
+
+```bash
+npx expo start
+```
+
+---
+
+## 💡 Vision
+
+Fitness apps often focus only on numbers.
+
+PulseFit focuses on consistency, encouragement, and building lasting healthy habits through delightful interactions and thoughtful design.
+
+---
+
+## 🤝 Contributing
+
+Contributions, ideas, and feedback are always welcome.
+
+If you'd like to improve PulseFit, feel free to fork the repository and submit a pull request.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+<div align="center">
+
+### ⭐ If you like this project, consider giving it a star!
+
+Built with ❤️ using React Native & Expo.
+
+</div>
