@@ -1,9 +1,8 @@
-// MetricCard component
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Card } from './Card';
 import { Text } from './Text';
-import { spacing, colors } from '~/theme';
+import { spacing, colors } from '../../theme';
 
 interface MetricCardProps {
   title: string;

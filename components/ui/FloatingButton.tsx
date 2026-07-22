@@ -1,57 +1,57 @@
-// FloatingButton component
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
-import { Text } from './Text';
-import { spacing, radius, colors, shadows } from '~/theme';
+import { TouchableOpacity, StyleSheet, Animated, Text } from 'react-native';
+import { colors } from '../../theme/colors';
+import { shadows } from '../../theme/shadows';
+import { usePressAnimation } from '../../hooks/useMotion';
 
-interface FloatingButtonProps {
-  icon?: React.ReactNode;
-  label?: string;
+export interface FloatingButtonProps {
+  icon: string;
   onPress: () => void;
-  position?: 'bottom-right' | 'bottom-center' | 'bottom-left';
   color?: string;
-  size?: 'small' | 'medium' | 'large';
+  size?: number;
+  accessibilityLabel?: string;
 }
 
 export const FloatingButton: React.FC<FloatingButtonProps> = ({
   icon,
-  label,
   onPress,
-  position = 'bottom-right',
   color = colors.primary,
-  size = 'medium',
+  size = 56,
+  accessibilityLabel = 'Floating Action Button',
 }) => {
-  const sizeMap = {
-    small: 48,
-    medium: 56,
-    large: 64,
-  };
-
-  const sizeValue = sizeMap[size];
-
-  const positionMap = {
-    'bottom-right': { right: spacing.lg, bottom: spacing.lg },
-    'bottom-center': { alignSelf: 'center', bottom: spacing.lg },
-    'bottom-left': { left: spacing.lg, bottom: spacing.lg },
-  };
-
-  const styles = StyleSheet.create({
-    button: {
-      width: sizeValue,
-      height: sizeValue,
-      borderRadius: radius.full,
-      backgroundColor: color,
-      justifyContent: 'center',
-      alignItems: 'center',
-      ...shadows.button,
-      position: 'absolute',
-      ...positionMap[position],
-    },
-  });
+  const { scale, handlePressIn, handlePressOut } = usePressAnimation(0.9);
 
   return (
-    <Pressable style={styles.button} onPress={onPress}>
-      {icon || (label && <Text color={colors.white}>{label}</Text>)}
-    </Pressable>
+    <Animated.View style={[{ transform: [{ scale }] }, shadows.button]}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        style={[
+          styles.button,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: color,
+          },
+        ]}
+      >
+        <Text style={[styles.icon, { fontSize: size * 0.45 }]}>{icon}</Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
+
+const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: {
+    color: '#FFFFFF',
+  },
+});

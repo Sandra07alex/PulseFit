@@ -1,3 +1,9 @@
-// TypeScript Path Aliases Configuration
-// This file helps with absolute imports using the ~ prefix
-// Make sure tsconfig.json has the baseUrl and paths configured correctly
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./*"],
+      "@/*": ["./*"]
+    }
+  }
+}

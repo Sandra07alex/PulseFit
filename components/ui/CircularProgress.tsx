@@ -1,8 +1,7 @@
-// CircularProgress component
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
-import { colors, spacing } from '~/theme';
+import { colors } from '../../theme';
 
 interface CircularProgressProps {
   value: number;
@@ -35,6 +34,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
     },
     value: {
       flexDirection: 'row',
+      alignItems: 'baseline',
     },
   });
 
@@ -45,7 +45,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           <Text variant="h4">{value}</Text>
           {unit && (
             <Text variant="body" color={colors.textSecondary}>
-              {unit}
+              {' '}{unit}
             </Text>
           )}
         </View>

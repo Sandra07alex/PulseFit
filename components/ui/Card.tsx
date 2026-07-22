@@ -1,38 +1,121 @@
-// Card component
 import React from 'react';
-import { View, ViewProps, StyleSheet } from 'react-native';
-import { spacing, radius, shadows, colors } from '~/theme';
+import { View, StyleSheet, TouchableOpacity, Animated, ViewStyle } from 'react-native';
+import { colors } from '../../theme/colors';
+import { radius } from '../../theme/radius';
+import { shadows } from '../../theme/shadows';
+import { useCardLiftAnimation } from '../../hooks/useMotion';
 
-interface CardProps extends ViewProps {
+export interface CardProps {
   children: React.ReactNode;
-  variant?: 'elevated' | 'filled' | 'outlined';
-  pressable?: boolean;
+  variant?: 'default' | 'elevated' | 'soft' | 'outlined' | 'hero';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
   onPress?: () => void;
+  style?: ViewStyle;
+  accessibilityLabel?: string;
 }
 
-export const Card = React.forwardRef<View, CardProps>(
-  ({ children, variant = 'elevated', pressable = false, onPress, style, ...props }, ref) => {
-    const styles = StyleSheet.create({
-      base: {
-        borderRadius: radius.card,
-        padding: spacing.md,
-        backgroundColor: colors.white,
-      },
-      elevated: shadows.card,
-      filled: { backgroundColor: colors.surface },
-      outlined: { borderWidth: 1, borderColor: colors.border },
-    });
+export const Card: React.FC<CardProps> = ({
+  children,
+  variant = 'default',
+  padding = 'md',
+  onPress,
+  style,
+  accessibilityLabel,
+}) => {
+  const { scale, translateY, handleTouchStart, handleTouchEnd } = useCardLiftAnimation();
 
+  const getPadding = () => {
+    switch (padding) {
+      case 'none':
+        return 0;
+      case 'sm':
+        return 12;
+      case 'lg':
+        return 24;
+      case 'md':
+      default:
+        return 18;
+    }
+  };
+
+  const getVariantStyle = () => {
+    switch (variant) {
+      case 'hero':
+        return {
+          backgroundColor: colors.surface,
+          borderRadius: radius.heroCard,
+          borderWidth: 1,
+          borderColor: colors.gray200,
+          ...shadows.xl,
+        };
+      case 'elevated':
+        return {
+          backgroundColor: colors.surface,
+          borderRadius: radius.card,
+          ...shadows.cardLift,
+        };
+      case 'soft':
+        return {
+          backgroundColor: colors.gray50,
+          borderRadius: radius.card,
+        };
+      case 'outlined':
+        return {
+          backgroundColor: colors.surface,
+          borderRadius: radius.card,
+          borderWidth: 1.5,
+          borderColor: colors.gray200,
+        };
+      case 'default':
+      default:
+        return {
+          backgroundColor: colors.surface,
+          borderRadius: radius.card,
+          ...shadows.card,
+        };
+    }
+  };
+
+  const cardContent = (
+    <View style={[styles.innerContainer, { padding: getPadding() }]}>
+      {children}
+    </View>
+  );
+
+  if (onPress) {
     return (
-      <View
-        ref={ref}
-        style={[styles.base, styles[variant], style]}
-        {...props}
+      <Animated.View
+        style={[
+          getVariantStyle(),
+          {
+            transform: [{ scale }, { translateY }],
+          },
+          style,
+        ]}
       >
-        {children}
-      </View>
+        <TouchableOpacity
+          activeOpacity={0.92}
+          onPress={onPress}
+          onPressIn={handleTouchStart}
+          onPressOut={handleTouchEnd}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+        >
+          {cardContent}
+        </TouchableOpacity>
+      </Animated.View>
     );
-  },
-);
+  }
 
-Card.displayName = 'Card';
+  return (
+    <View style={[getVariantStyle(), style]}>
+      {cardContent}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  innerContainer: {
+    overflow: 'hidden',
+  },
+});

@@ -1,8 +1,7 @@
-// Screen component (SafeAreaView wrapper)
 import React from 'react';
 import { View, ViewProps, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { spacing, colors } from '~/theme';
+import { spacing, colors } from '../../theme';
 
 interface ScreenProps extends ViewProps {
   children: React.ReactNode;

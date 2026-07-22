@@ -1,7 +1,6 @@
-// Text component
 import React from 'react';
-import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
-import { typography, colors } from '~/theme';
+import { Text as RNText, TextProps as RNTextProps, StyleSheet, TextStyle } from 'react-native';
+import { typography, colors } from '../../theme';
 
 type TextVariant = keyof typeof typography.variants;
 
@@ -18,7 +17,7 @@ export const Text = React.forwardRef<RNText, TextProps>(
     const styles = StyleSheet.create({
       base: {
         fontSize: variantStyle.size,
-        fontWeight: (weight ? typography.weights[weight] : variantStyle.weight) as TextProps['style'],
+        fontWeight: String(weight ? typography.weights[weight] : variantStyle.weight) as TextStyle['fontWeight'],
         lineHeight: variantStyle.lineHeight * variantStyle.size,
         color,
       },
@@ -27,7 +26,7 @@ export const Text = React.forwardRef<RNText, TextProps>(
     return (
       <RNText
         ref={ref}
-        style={[styles.base, style]}
+        style={[styles.base, style as TextStyle]}
         {...props}
       >
         {children}

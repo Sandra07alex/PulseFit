@@ -1,13 +1,17 @@
-// Animation constants
+// Animation constants & Spring presets - PulseFit Motion System
+
 export const animations = {
-  // Durations (in milliseconds)
+  // Durations (in ms)
   durations: {
-    fast: 100,
-    base: 200,
-    normal: 300,
+    instant: 50,
+    fast: 150,
+    base: 250,
+    normal: 350,
     slow: 500,
-    slower: 700,
-    slowest: 1000,
+    slower: 750,
+    slowest: 1200,
+    breathing: 2800,
+    flameFlicker: 600,
   },
 
   // Timing functions
@@ -17,57 +21,63 @@ export const animations = {
     easeIn: 'ease-in',
     easeOut: 'ease-out',
     easeInOut: 'ease-in-out',
+    customSpring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
   },
 
-  // Spring configurations
+  // Spring physics configurations
   spring: {
+    // Gentle & smooth (for cards and sheets)
     gentle: {
-      damping: 10,
-      mass: 1,
-      stiffness: 100,
-      overshootClamping: false,
-      restDisplacementThreshold: 0.001,
-      restSpeedThreshold: 0.001,
-    },
-    bouncy: {
-      damping: 6,
-      mass: 1,
-      stiffness: 100,
-      overshootClamping: false,
-      restDisplacementThreshold: 0.001,
-      restSpeedThreshold: 0.001,
-    },
-    stiff: {
       damping: 15,
       mass: 1,
-      stiffness: 150,
+      stiffness: 120,
       overshootClamping: false,
-      restDisplacementThreshold: 0.001,
-      restSpeedThreshold: 0.001,
+      restDisplacementThreshold: 0.01,
+      restSpeedThreshold: 0.01,
+    },
+    // Bouncy & energetic (for mascot reactions, celebratory pops, quick actions)
+    bouncy: {
+      damping: 8,
+      mass: 0.8,
+      stiffness: 140,
+      overshootClamping: false,
+      restDisplacementThreshold: 0.01,
+      restSpeedThreshold: 0.01,
+    },
+    // Snappy (for button presses and tab switches)
+    snappy: {
+      damping: 18,
+      mass: 0.6,
+      stiffness: 220,
+      overshootClamping: false,
+      restDisplacementThreshold: 0.01,
+      restSpeedThreshold: 0.01,
+    },
+    // Floating island tab bounce
+    islandTab: {
+      damping: 14,
+      mass: 0.7,
+      stiffness: 180,
+      overshootClamping: false,
+    },
+    // Elastic pop (for quick action radial expansion)
+    elastic: {
+      damping: 10,
+      mass: 0.9,
+      stiffness: 160,
+      overshootClamping: false,
     },
   },
 
-  // Preset animations
-  presets: {
-    fadeIn: {
-      duration: 300,
-      timing: 'ease-in-out',
-    },
-    slideIn: {
-      duration: 300,
-      timing: 'ease-out',
-    },
-    slideUp: {
-      duration: 300,
-      timing: 'ease-out',
-    },
-    pop: {
-      duration: 200,
-      timing: 'ease-out',
-    },
-    bounce: {
-      duration: 400,
-      timing: 'ease-out',
-    },
+  // Micro-interaction presets
+  micro: {
+    buttonPressScale: 0.94,
+    cardTouchScale: 0.98,
+    cardLiftTranslateY: -6,
+    mascotBreathingScaleMax: 1.05,
+    mascotBreathingScaleMin: 0.97,
+    radialMenuDistance: 76,
   },
 } as const;
+
+export type AnimationSystem = typeof animations;

@@ -1,57 +1,74 @@
-// EmptyState component
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text } from './Text';
-import { spacing, colors } from '~/theme';
+import { View, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Companion } from '../mascot/Companion';
+import { CompanionId, CompanionMood } from '../mascot/types';
+import { Button } from './Button';
+import { colors } from '../../theme/colors';
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
   title: string;
   description?: string;
-  icon?: React.ReactNode;
-  action?: React.ReactNode;
+  companionId?: CompanionId;
+  companionMood?: CompanionMood;
+  actionLabel?: string;
+  onActionPress?: () => void;
+  style?: ViewStyle;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
   title,
   description,
-  icon,
-  action,
+  companionId = 'luna',
+  companionMood = 'sleep',
+  actionLabel,
+  onActionPress,
+  style,
 }) => {
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: spacing.lg,
-    },
-    icon: {
-      marginBottom: spacing.lg,
-    },
-    title: {
-      marginBottom: spacing.sm,
-      textAlign: 'center',
-    },
-    description: {
-      marginBottom: spacing.lg,
-      textAlign: 'center',
-    },
-    action: {
-      marginTop: spacing.lg,
-    },
-  });
-
   return (
-    <View style={styles.container}>
-      {icon && <View style={styles.icon}>{icon}</View>}
-      <Text variant="h4" style={styles.title}>
-        {title}
-      </Text>
-      {description && (
-        <Text variant="body" color={colors.textSecondary} style={styles.description}>
-          {description}
-        </Text>
+    <View style={[styles.container, style]}>
+      <View style={styles.mascotWrapper}>
+        <Companion id={companionId} mood={companionMood} size="lg" animated={true} />
+      </View>
+
+      <Text style={styles.title}>{title}</Text>
+
+      {description && <Text style={styles.description}>{description}</Text>}
+
+      {actionLabel && onActionPress && (
+        <Button
+          label={actionLabel}
+          variant="primary"
+          size="md"
+          onPress={onActionPress}
+          style={{ marginTop: 16 }}
+        />
       )}
-      {action && <View style={styles.action}>{action}</View>}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+  },
+  mascotWrapper: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.gray900,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  description: {
+    fontSize: 14,
+    color: colors.gray500,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 280,
+  },
+});

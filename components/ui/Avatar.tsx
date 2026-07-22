@@ -1,8 +1,7 @@
-// Avatar component
 import React from 'react';
 import { View, Image, ImageSourcePropType, StyleSheet } from 'react-native';
 import { Text } from './Text';
-import { spacing, radius, colors } from '~/theme';
+import { spacing, radius, colors } from '../../theme';
 
 interface AvatarProps {
   source?: ImageSourcePropType;
