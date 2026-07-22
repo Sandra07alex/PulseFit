@@ -1,38 +1,43 @@
-// Theme Provider
-import React, { createContext, useContext, useMemo } from 'react';
-import { theme } from '~/theme';
-import { useColorScheme } from '~/hooks';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
+import { useColorScheme as useRNColorScheme } from 'react-native';
+import { StorageService } from '../services/StorageService';
+import { StorageKeys } from '../constants/StorageKeys';
 
-interface ThemeContextValue {
-  theme: typeof theme;
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+export interface ThemeContextValue {
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
   isDark: boolean;
 }
 
-const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-export interface ThemeProviderProps {
-  children: React.ReactNode;
-}
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const systemColorScheme = useRNColorScheme();
+  const [mode, setModeState] = useState<ThemeMode>('system');
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  useEffect(() => {
+    StorageService.getItem<ThemeMode>(StorageKeys.THEME_MODE).then((savedMode) => {
+      if (savedMode) setModeState(savedMode);
+    });
+  }, []);
+
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
+    StorageService.setItem<ThemeMode>(StorageKeys.THEME_MODE, newMode);
+  };
+
+  const isDark = mode === 'system' ? systemColorScheme === 'dark' : mode === 'dark';
 
   const value = useMemo(
     () => ({
-      theme,
+      mode,
+      setMode,
       isDark,
     }),
-    [isDark],
+    [mode, isDark]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-};
-
-export const useThemeContext = () => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useThemeContext must be used within ThemeProvider');
-  }
-  return context;
 };

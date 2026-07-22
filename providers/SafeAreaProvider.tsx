@@ -1,13 +1,12 @@
-// Safe Area Provider
 import React from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider as RNSafeAreaProvider } from 'react-native-safe-area-context';
 
-export interface SafeAreaProviderWrapperProps {
+export interface SafeAreaProviderProps {
   children: React.ReactNode;
 }
 
-export const SafeAreaProviderWrapper: React.FC<SafeAreaProviderWrapperProps> = ({
-  children,
-}) => {
-  return <SafeAreaProvider>{children}</SafeAreaProvider>;
+export const SafeAreaProvider: React.FC<SafeAreaProviderProps> = ({ children }) => {
+  return <RNSafeAreaProvider>{children}</RNSafeAreaProvider>;
 };
+
+export const SafeAreaProviderWrapper = SafeAreaProvider;
