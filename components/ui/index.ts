@@ -31,3 +31,4 @@ export * from './SkeletonLoader';
 export * from './Screen';
 export * from './Text';
 export * from './Avatar';
+export * from './QuickLogModal';

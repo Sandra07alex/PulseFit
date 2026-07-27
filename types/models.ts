@@ -79,6 +79,7 @@ export interface NutritionEntry {
   fatGrams: number;
   loggedAt: string;
   createdAt: string;
+  servingSize?: string;
 }
 
 export interface WaterLog {
@@ -180,3 +181,62 @@ export type RootStackParamList = {
   Settings: undefined;
   Modal: { type: string };
 };
+
+export interface UserProfile {
+  name: string;
+  age: number;
+  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  heightCm: number;
+  weightKg: number;
+  targetWeightKg: number;
+  goal: string;
+  activityLevel: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'athlete';
+  waterGoalMl: number;
+  calorieGoal: number;
+  proteinGoalGrams: number;
+  unitSystem: 'metric' | 'imperial';
+  reminderSettings: {
+    preset: string;
+    time: string;
+    enabled: boolean;
+  };
+  themePreference: 'light' | 'dark' | 'system';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeightLog {
+  id: string;
+  weightKg: number;
+  date: string;
+  createdAt: string;
+}
+
+export interface DailySummary {
+  date: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalWaterMl: number;
+  totalWorkoutMinutes: number;
+  totalCaloriesBurned: number;
+  workoutCount: number;
+}
+
+export type QuoteCategory =
+  | 'Motivation'
+  | 'Funny'
+  | 'Workout'
+  | 'Food'
+  | 'Water'
+  | 'Consistency'
+  | 'Pulse'
+  | 'Random'
+  | 'Morning'
+  | 'Night';
+
+export interface Quote {
+  id: string;
+  text: string;
+  author?: string;
+  category: QuoteCategory;
+}

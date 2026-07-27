@@ -1,4 +1,4 @@
-// App layout placeholder
+// App layout
 import React from 'react';
 import { Stack } from 'expo-router';
 
@@ -7,12 +7,14 @@ export default function AppLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animationEnabled: true,
+        animation: 'default',
       }}
     >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="settings" />
+      {/* Phase 11 — Food Tracking */}
+      <Stack.Screen name="food" />
     </Stack>
   );
 }

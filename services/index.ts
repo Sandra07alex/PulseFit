@@ -14,3 +14,6 @@ export * from './goal.service';
 export * from './profile.service';
 export * from './water.service';
 export * from './workout.service';
+export * from './LocalProfileService';
+export * from './QuoteService';
+export * from './repositories';

@@ -3,6 +3,7 @@ import { View, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
+import { LocalProfileService, NutritionCalculator, WaterCalculator } from '../../services';
 import { OnboardingProgressIndicator } from '../../features/onboarding/components/OnboardingProgressIndicator';
 import { Step1Welcome } from '../../features/onboarding/steps/Step1Welcome';
 import { Step2Goal } from '../../features/onboarding/steps/Step2Goal';
@@ -39,7 +40,36 @@ export default function OnboardingScreen() {
     ]).start();
   }, [store.step, fadeAnim, slideAnim]);
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    try {
+      const macros = NutritionCalculator.calculateDailyMacros(
+        store.weightKg || 70,
+        store.goal === 'lose_fat' ? 'cut' : store.goal === 'build_muscle' ? 'bulk' : 'maintain'
+      );
+      const waterMl = WaterCalculator.calculateDailyTargetMl(store.weightKg || 70);
+
+      await LocalProfileService.createProfile({
+        name: 'Pulse Athlete',
+        age: store.age,
+        gender: store.gender,
+        heightCm: store.heightCm,
+        weightKg: store.weightKg,
+        targetWeightKg: store.targetWeightKg || store.weightKg,
+        goal: store.goal,
+        activityLevel: store.activityLevel,
+        waterGoalMl: waterMl,
+        calorieGoal: macros.calories,
+        proteinGoalGrams: macros.proteinGrams,
+        unitSystem: store.unitSystem,
+        reminderSettings: {
+          preset: store.reminderPreset,
+          time: store.reminderTime,
+          enabled: true,
+        },
+      });
+    } catch (err) {
+      console.warn('[Onboarding] Error saving profile:', err);
+    }
     store.completeOnboarding();
     router.replace('/(tabs)/home');
   };
