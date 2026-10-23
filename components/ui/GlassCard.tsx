@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity, Animated } from 'react-native';
-import { colors } from '../../theme/colors';
+import { ViewStyle } from 'react-native';
+import { ClayCard } from '../clay/ClayCard';
+import { splitStyle, radiusOf } from '../clay/splitStyle';
 import { radius } from '../../theme/radius';
-import { shadows } from '../../theme/shadows';
-import { useCardLiftAnimation } from '../../hooks/useMotion';
 
 export interface GlassCardProps {
   children: React.ReactNode;
@@ -14,6 +13,9 @@ export interface GlassCardProps {
   style?: ViewStyle;
 }
 
+const PADDING = { none: 0, sm: 12, md: 18, lg: 24 } as const;
+
+/** GlassCard – kept for API compatibility, now a soft clay surface */
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
   mode = 'light',
@@ -22,59 +24,19 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   onPress,
   style,
 }) => {
-  const { scale, translateY, handleTouchStart, handleTouchEnd } = useCardLiftAnimation();
-
-  const getPadding = () => {
-    switch (padding) {
-      case 'none':
-        return 0;
-      case 'sm':
-        return 12;
-      case 'lg':
-        return 24;
-      case 'md':
-      default:
-        return 18;
-    }
-  };
-
-  const isLight = mode === 'light';
-
-  const containerStyle: ViewStyle = {
-    backgroundColor: isLight ? colors.glass.light : colors.glass.dark,
-    borderColor: isLight ? colors.glass.borderLight : colors.glass.borderDark,
-    borderWidth: 1.5,
-    borderRadius: radius.card,
-    padding: getPadding(),
-    ...(glow ? shadows.mascotGlow : shadows.glass),
-  };
-
-  if (onPress) {
-    return (
-      <Animated.View
-        style={[
-          containerStyle,
-          {
-            transform: [{ scale }, { translateY }],
-          },
-          style,
-        ]}
-      >
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={onPress}
-          onPressIn={handleTouchStart}
-          onPressOut={handleTouchEnd}
-        >
-          {children}
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  }
-
+  const { outer, inner } = splitStyle(style);
   return (
-    <View style={[containerStyle, style]}>
+    <ClayCard
+      tint={mode === 'dark' ? 'pulse' : 'cloud'}
+      depth="md"
+      glow={glow ? 'strong' : 'medium'}
+      radius={radiusOf(style, radius.card)}
+      padding={PADDING[padding]}
+      onPress={onPress}
+      style={outer}
+      contentStyle={inner}
+    >
       {children}
-    </View>
+    </ClayCard>
   );
 };

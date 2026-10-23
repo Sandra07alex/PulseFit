@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, StatusBar as RNStatusBar, ViewStyle } from 'react-native';
+import { ViewStyle } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useTheme } from '../../hooks/useTheme';
+import { ClayBackground } from '../clay/ClayBackground';
 
 export interface ScreenContainerProps {
   children: React.ReactNode;
@@ -9,18 +9,10 @@ export interface ScreenContainerProps {
 }
 
 export const ScreenContainer: React.FC<ScreenContainerProps> = ({ children, style }) => {
-  const { isDark, colors } = useTheme();
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }, style]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+    <ClayBackground style={style}>
+      <StatusBar style="dark" />
       {children}
-    </View>
+    </ClayBackground>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

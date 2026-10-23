@@ -3,8 +3,9 @@ import { View, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Companion } from '../mascot/Companion';
 import { CompanionId, CompanionMood } from '../mascot/types';
-import { useTheme } from '../../hooks/useTheme';
 import { spacing } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
+import { clay } from '../../theme/clay';
 
 export interface HeaderProps {
   title?: string;
@@ -30,7 +31,6 @@ export const Header: React.FC<HeaderProps> = ({
   style,
 }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
 
   return (
     <View
@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
         {companionId && (
           <View style={styles.mascotGroup}>
             <Companion id={companionId} mood={companionMood} size="sm" animated={true} />
-            {greeting && <Text style={[styles.greetingText, { color: colors.textSecondary }]}>{greeting}</Text>}
+            {greeting && <Text style={[styles.greetingText, { color: clay.ink.secondary }]}>{greeting}</Text>}
           </View>
         )}
 
@@ -56,11 +56,11 @@ export const Header: React.FC<HeaderProps> = ({
       {(title || subtitle) && (
         <View style={styles.titleGroup}>
           {title && (
-            <Text style={[largeTitle ? styles.largeTitle : styles.smallTitle, { color: colors.text }]}>
+            <Text style={[largeTitle ? styles.largeTitle : styles.smallTitle, { color: clay.ink.primary }]}>
               {title}
             </Text>
           )}
-          {subtitle && <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
+          {subtitle && <Text style={[styles.subtitle, { color: clay.ink.secondary }]}>{subtitle}</Text>}
         </View>
       )}
     </View>
@@ -100,17 +100,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   largeTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    fontSize: 30,
+    fontFamily: typography.fonts.display,
   },
   smallTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: typography.fonts.display,
   },
   subtitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: typography.fonts.displayMedium,
     marginTop: 2,
   },
 });

@@ -32,7 +32,7 @@ export function useFoodSearch(): UseFoodSearchResult {
   const [isSearching,      setIsSearching]  = useState(false);
   const [selectedCategory, setSelectedCat]  = useState<FoodCategory | null>(null);
 
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>();
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const performSearch = useCallback(
     async (q: string, category: FoodCategory | null) => {

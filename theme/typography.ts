@@ -6,6 +6,10 @@ export const typography = {
     medium: 'System',
     semibold: 'System',
     bold: 'System',
+    // Rounded "cute" display face (loaded in app/_layout.tsx)
+    display: 'Fredoka_700Bold',
+    displaySemibold: 'Fredoka_600SemiBold',
+    displayMedium: 'Fredoka_500Medium',
   },
 
   // Font sizes

@@ -1,8 +1,9 @@
 import { StorageService } from '../StorageService';
 import { StorageKeys } from '../../constants/StorageKeys';
 import type { DailySummary } from '../../types/models';
+import { localDateKey } from '../../utils/date';
 
-const getTodayDateStr = (): string => new Date().toISOString().split('T')[0];
+const getTodayDateStr = (): string => localDateKey();
 
 class DailySummaryRepositoryImpl {
   async getAll(): Promise<DailySummary[]> {

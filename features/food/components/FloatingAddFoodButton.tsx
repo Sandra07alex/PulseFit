@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
     bottom:   100, // above floating nav
-    right:    spacing_lg,
-    left:     spacing_lg,
+    right:    16,
+    left:     16,
     zIndex:   50,
   },
   button: {
@@ -106,5 +106,3 @@ const styles = StyleSheet.create({
   },
 });
 
-// Inline constant to avoid spacing import at module level
-const spacing_lg = 20;

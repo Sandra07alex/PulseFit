@@ -1,15 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Animated, Dimensions } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Companion } from '../mascot/Companion';
+import { ClayCard } from '../clay/ClayCard';
 import { QuickActionRadialMenu, QuickActionOption } from './QuickActionRadialMenu';
-import { colors } from '../../theme/colors';
-import { shadows } from '../../theme/shadows';
-import { radius } from '../../theme/radius';
+import { clay, clayTints, ClayTint } from '../../theme/clay';
+import { typography } from '../../theme/typography';
+import { useHaptics } from '../../hooks/useHaptics';
 
 export interface TabItem {
   id: string;
   label: string;
   icon: string;
+  tint?: ClayTint;
 }
 
 export interface FloatingIslandNavProps {
@@ -20,13 +23,60 @@ export interface FloatingIslandNavProps {
 }
 
 const DEFAULT_TABS: TabItem[] = [
-  { id: 'today', label: 'Today', icon: '🏠' },
-  { id: 'activity', label: 'Activity', icon: '🔥' },
-  { id: 'nutrition', label: 'Nutrition', icon: '🥦' },
-  { id: 'profile', label: 'Profile', icon: '👤' },
+  { id: 'today', label: 'Today', icon: '🏠', tint: 'pulse' },
+  { id: 'move', label: 'Move', icon: '🔥', tint: 'blaze' },
+  { id: 'eat', label: 'Eat', icon: '🥦', tint: 'brocco' },
+  { id: 'stats', label: 'Stats', icon: '📈', tint: 'luna' },
 ];
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+/** One tab: the active one pops up into a tinted clay bubble */
+const NavTab: React.FC<{ tab: TabItem; active: boolean; onPress: () => void }> = ({ tab, active, onPress }) => {
+  const pop = useRef(new Animated.Value(active ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.spring(pop, { toValue: active ? 1 : 0, tension: 180, friction: 10, useNativeDriver: true }).start();
+  }, [active, pop]);
+
+  const tint = tab.tint ?? 'pulse';
+  const translateY = pop.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
+  const bubbleScale = pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+
+  return (
+    <Pressable
+      style={styles.tab}
+      onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityLabel={tab.label}
+      accessibilityState={{ selected: active }}
+    >
+      <Animated.View style={{ transform: [{ translateY }], alignItems: 'center' }}>
+        <View style={styles.iconSlot}>
+          <Animated.View
+            style={[StyleSheet.absoluteFill, { opacity: pop, transform: [{ scale: bubbleScale }] }]}
+          >
+            <ClayCard
+              tint={tint}
+              depth="sm"
+              radius={16}
+              padding={0}
+              glow="soft"
+              contentStyle={styles.iconSlot}
+            />
+          </Animated.View>
+          <Text style={styles.icon}>{tab.icon}</Text>
+        </View>
+        <Text
+          style={[
+            styles.label,
+            active && { color: clayTints[tint].accent, fontFamily: typography.fonts.display },
+          ]}
+        >
+          {tab.label}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 export const FloatingIslandNav: React.FC<FloatingIslandNavProps> = ({
   activeTab,
@@ -34,212 +84,113 @@ export const FloatingIslandNav: React.FC<FloatingIslandNavProps> = ({
   onQuickActionSelect,
   tabs = DEFAULT_TABS,
 }) => {
-  const [quickActionVisible, setQuickActionVisible] = useState(false);
-  const activeIndex = tabs.findIndex((t) => t.id === activeTab);
-  const safeIndex = activeIndex >= 0 ? activeIndex : 0;
+  const insets = useSafeAreaInsets();
+  const haptics = useHaptics();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Active tab pill indicator spring translation
-  const indicatorAnim = useRef(new Animated.Value(safeIndex)).current;
-
-  useEffect(() => {
-    Animated.spring(indicatorAnim, {
-      toValue: safeIndex,
-      tension: 180,
-      friction: 14,
-      useNativeDriver: true,
-    }).start();
-  }, [safeIndex, indicatorAnim]);
-
-  // Divide nav bar width (excluding center mascot gap)
-  const navContainerWidth = Math.min(SCREEN_WIDTH - 32, 380);
-  const totalTabs = tabs.length;
-
-  // Interpolate active indicator position
-  // Left half tabs (indices 0, 1), Right half tabs (indices 2, 3) with gap for center mascot button
-  const getTabTranslateX = (index: number) => {
-    const tabWidth = (navContainerWidth - 72) / totalTabs; // subtract center mascot button width
-    let posX = index * tabWidth;
-    if (index >= 2) {
-      posX += 72; // center mascot gap offset
-    }
-    return posX;
+  const press = (id: string) => {
+    haptics.light();
+    onTabPress(id);
   };
 
-  const indicatorTranslateX = indicatorAnim.interpolate({
-    inputRange: tabs.map((_, i) => i),
-    outputRange: tabs.map((_, i) => getTabTranslateX(i)),
-  });
-
-  const activeTabWidth = (navContainerWidth - 72) / totalTabs;
-
   return (
-    <View style={styles.outerWrapper}>
-      {/* Floating Island Container */}
-      <View style={[styles.islandContainer, { width: navContainerWidth }, shadows.floatingNav]}>
-        {/* Active Pill Indicator */}
-        <Animated.View
-          style={[
-            styles.activeIndicator,
-            {
-              width: activeTabWidth - 8,
-              transform: [{ translateX: indicatorTranslateX }],
-            },
-          ]}
-        />
+    <View style={[styles.outer, { bottom: Math.max(insets.bottom, 12) + 6 }]} pointerEvents="box-none">
+      <ClayCard
+        tint="cloud"
+        depth="md"
+        radius={999}
+        padding={0}
+        glow="strong"
+        style={styles.island}
+        contentStyle={styles.islandFace}
+      >
+        {tabs.slice(0, 2).map((t) => (
+          <NavTab key={t.id} tab={t} active={t.id === activeTab} onPress={() => press(t.id)} />
+        ))}
+        <View style={styles.centerGap} />
+        {tabs.slice(2, 4).map((t) => (
+          <NavTab key={t.id} tab={t} active={t.id === activeTab} onPress={() => press(t.id)} />
+        ))}
+      </ClayCard>
 
-        {/* Navigation Tabs (Left half) */}
-        <View style={styles.tabSection}>
-          {tabs.slice(0, 2).map((tab, idx) => {
-            const isActive = tab.id === activeTab;
-            return (
-              <TouchableOpacity
-                key={tab.id}
-                activeOpacity={0.7}
-                style={styles.tabButton}
-                onPress={() => onTabPress(tab.id)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-              >
-                <Text style={styles.tabIcon}>{tab.icon}</Text>
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Center Mascot Button Gap Spacer */}
-        <View style={styles.centerGapSpacer} />
-
-        {/* Navigation Tabs (Right half) */}
-        <View style={styles.tabSection}>
-          {tabs.slice(2, 4).map((tab, idx) => {
-            const actualIdx = idx + 2;
-            const isActive = tab.id === activeTab;
-            return (
-              <TouchableOpacity
-                key={tab.id}
-                activeOpacity={0.7}
-                style={styles.tabButton}
-                onPress={() => onTabPress(tab.id)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-              >
-                <Text style={styles.tabIcon}>{tab.icon}</Text>
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Floating Overlapping Mascot Button */}
-      <View style={styles.mascotButtonPosition}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => setQuickActionVisible(true)}
-          style={styles.mascotTouchable}
-          accessibilityRole="button"
-          accessibilityLabel="Open Quick Log Menu"
+      {/* Center mascot button */}
+      <View style={styles.centerButton} pointerEvents="box-none">
+        <ClayCard
+          tint="pulse"
+          depth="lg"
+          radius={40}
+          padding={0}
+          glow="strong"
+          onPress={() => {
+            haptics.medium();
+            setMenuOpen(true);
+          }}
+          accessibilityLabel="Open quick log menu"
+          contentStyle={styles.centerFace}
         >
-          <View style={[styles.mascotGlowRing, shadows.mascotGlow]}>
-            <Companion id="pulse" mood="idle" size={62} animated={true} />
-          </View>
-        </TouchableOpacity>
+          <Companion id="pulse" mood="idle" size={54} />
+        </ClayCard>
       </View>
 
-      {/* Radial Quick Action Menu Overlay */}
       <QuickActionRadialMenu
-        visible={quickActionVisible}
-        onClose={() => setQuickActionVisible(false)}
-        onSelectAction={(actionId) => {
-          if (onQuickActionSelect) {
-            onQuickActionSelect(actionId);
-          }
-        }}
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onSelectAction={(id) => onQuickActionSelect?.(id)}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  outerWrapper: {
+  outer: {
     position: 'absolute',
-    bottom: 24,
     left: 0,
     right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  islandContainer: {
-    height: 66,
-    borderRadius: radius.navPill,
-    backgroundColor: colors.lightMode.navBackground,
+  island: {
+    width: '92%',
+    maxWidth: 400,
+  },
+  islandFace: {
+    height: 72,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: colors.glass.borderLight,
-    position: 'relative',
-    overflow: 'hidden',
+    paddingHorizontal: 6,
   },
-  activeIndicator: {
-    position: 'absolute',
-    top: 6,
-    bottom: 6,
-    left: 8,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-  },
-  tabSection: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  centerGapSpacer: {
-    width: 64,
-  },
-  tabButton: {
+  tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
+    height: '100%',
   },
-  tabIcon: {
+  iconSlot: {
+    width: 40,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: {
     fontSize: 20,
-    marginBottom: 2,
   },
-  tabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: colors.gray500,
+  label: {
+    marginTop: 1,
+    fontSize: 11,
+    fontFamily: typography.fonts.displayMedium,
+    color: clay.ink.tertiary,
   },
-  tabLabelActive: {
-    color: colors.primary,
-    fontWeight: '700',
+  centerGap: {
+    width: 76,
   },
-  mascotButtonPosition: {
+  centerButton: {
     position: 'absolute',
-    top: -18,
+    top: -26,
     alignSelf: 'center',
-    zIndex: 10,
   },
-  mascotTouchable: {
+  centerFace: {
+    width: 74,
+    height: 74,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  mascotGlowRing: {
-    width: 68,
-    height: 68,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primarySoft,
   },
 });

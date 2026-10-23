@@ -17,3 +17,4 @@ export * from './workout.service';
 export * from './LocalProfileService';
 export * from './QuoteService';
 export * from './repositories';
+export * from './StreakService';

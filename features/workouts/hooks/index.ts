@@ -1,2 +1,3 @@
-// Workout hooks placeholder
-// Workout-specific hooks will be implemented here
+// Workout hooks
+export { useWorkouts } from './useWorkouts';
+export type { NewWorkout, UseWorkoutsReturn } from './useWorkouts';

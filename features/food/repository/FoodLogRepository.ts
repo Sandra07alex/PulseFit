@@ -22,13 +22,15 @@ import type {
   NutritionTotals,
 } from '../types/food.types';
 import type { NutritionEntry } from '../../../types/models';
+import { localDateKey, isOnLocalDay } from '../../../utils/date';
+import { StreakService } from '../../../services/StreakService';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  return localDateKey();
 }
 
 function generateId(): string {
@@ -101,6 +103,7 @@ class FoodLogRepositoryImpl {
     };
     logs.push(newEntry);
     await this.saveLogs(logs);
+    await StreakService.recordActivity(newEntry.loggedAt);
     await this.updateRecentFoods(entry.foodId);
     return newEntry;
   }
@@ -143,7 +146,7 @@ class FoodLogRepositoryImpl {
   async getToday(): Promise<FoodLogEntry[]> {
     const today = todayISO();
     const logs  = await this.getAllLogs();
-    return logs.filter((log) => log.loggedAt.startsWith(today));
+    return logs.filter((log) => isOnLocalDay(log.loggedAt, today));
   }
 
   /**
@@ -159,7 +162,7 @@ class FoodLogRepositoryImpl {
    */
   async getByDate(date: string): Promise<FoodLogEntry[]> {
     const logs = await this.getAllLogs();
-    return logs.filter((log) => log.loggedAt.startsWith(date));
+    return logs.filter((log) => isOnLocalDay(log.loggedAt, date));
   }
 
   /**
@@ -195,7 +198,7 @@ class FoodLogRepositoryImpl {
    * Get the list of recently-used food IDs (max 20, newest first).
    */
   async getRecentFoodIds(): Promise<string[]> {
-    const recent = await StorageService.getItem<string[]>('@pulsefit/recent_food_ids');
+    const recent = await StorageService.getItem<string[]>(StorageKeys.RECENT_FOOD_IDS);
     return recent ?? [];
   }
 
@@ -209,7 +212,7 @@ class FoodLogRepositoryImpl {
       // Remove if already exists, then prepend
       const filtered = recent.filter((id) => id !== foodId);
       const updated  = [foodId, ...filtered].slice(0, 20);
-      await StorageService.setItem('@pulsefit/recent_food_ids' as any, updated);
+      await StorageService.setItem(StorageKeys.RECENT_FOOD_IDS, updated);
     } catch (err) {
       console.warn('[FoodLogRepository] Failed to update recent foods:', err);
     }

@@ -7,7 +7,6 @@ export * from './useHaptics';
 export * from './useStorage';
 export * from './useDebounce';
 export * from './useKeyboard';
-export * from './useNetwork';
 export * from './useSafeArea';
 export * from './useMotion';
 export * from './useColorScheme';

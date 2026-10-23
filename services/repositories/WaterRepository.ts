@@ -1,11 +1,13 @@
 import { StorageService } from '../StorageService';
 import { StorageKeys } from '../../constants/StorageKeys';
 import type { HydrationEntry } from '../../types/models';
+import { localDateKey, isOnLocalDay } from '../../utils/date';
+import { StreakService } from '../StreakService';
 
-const getTodayDateStr = (): string => new Date().toISOString().split('T')[0];
+const getTodayDateStr = (): string => localDateKey();
 
 const isSameDate = (dateA: string, dateB: string): boolean => {
-  return dateA.split('T')[0] === dateB.split('T')[0];
+  return isOnLocalDay(dateA, dateB);
 };
 
 class WaterRepositoryImpl {
@@ -39,6 +41,7 @@ class WaterRepositoryImpl {
     };
     const updated = [newEntry, ...all];
     await StorageService.setItem(StorageKeys.WATER_LOGS, updated);
+    await StreakService.recordActivity(newEntry.loggedAt);
     return newEntry;
   }
 

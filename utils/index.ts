@@ -7,6 +7,6 @@ export * from './quotes';
 export * from './gradients';
 export * from './validation';
 export * from './storage';
-export * from './permissions';
 export * from './error';
 export * from './Logger';
+export * from './color';

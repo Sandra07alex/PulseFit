@@ -1,4 +1,5 @@
 // Workouts feature barrel export
 export * from './types';
 export * from './constants';
-// Services and hooks imported separately to avoid circular dependencies
+export * from './hooks';
+export { WorkoutScreen } from './screens/WorkoutScreen';

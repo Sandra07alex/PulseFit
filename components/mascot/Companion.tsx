@@ -1,10 +1,9 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Animated } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Animated, Easing } from 'react-native';
 import { CompanionProps, CompanionConfig } from './types';
 import { CompanionVector } from './CompanionVector';
 import { useBreathingAnimation, usePressAnimation } from '../../hooks/useMotion';
 import { colors } from '../../theme/colors';
-import { shadows } from '../../theme/shadows';
 
 export const COMPANION_CONFIGS: Record<string, CompanionConfig> = {
   droppy: {
@@ -69,6 +68,39 @@ export const COMPANION_CONFIGS: Record<string, CompanionConfig> = {
   },
 };
 
+/** Gentle hover (or a happy hop) so companions feel alive */
+function useFloatAnimation(active: boolean, kind: 'float' | 'hop', size: number) {
+  const v = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!active) return;
+    const up = kind === 'hop' ? 260 : 1600;
+    const down = kind === 'hop' ? 320 : 1600;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, {
+          toValue: 1,
+          duration: up,
+          easing: kind === 'hop' ? Easing.out(Easing.quad) : Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(v, {
+          toValue: 0,
+          duration: down,
+          easing: kind === 'hop' ? Easing.bounce : Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.delay(kind === 'hop' ? 500 : 0),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [active, kind, v]);
+
+  const lift = kind === 'hop' ? size * 0.14 : size * 0.05;
+  return v.interpolate({ inputRange: [0, 1], outputRange: [0, -lift] });
+}
+
 export const Companion: React.FC<CompanionProps> = ({
   id = 'pulse',
   mood = 'idle',
@@ -88,6 +120,7 @@ export const Companion: React.FC<CompanionProps> = ({
     : 128; // 'xl'
 
   const breathingScale = useBreathingAnimation(animated && mood === 'idle');
+  const floatY = useFloatAnimation(animated, mood === 'celebrate' ? 'hop' : 'float', numericSize);
   const { scale: pressScale, handlePressIn, handlePressOut } = usePressAnimation(0.92);
 
   const companionConfig = COMPANION_CONFIGS[id] || COMPANION_CONFIGS.pulse;
@@ -98,12 +131,13 @@ export const Companion: React.FC<CompanionProps> = ({
         styles.container,
         {
           transform: [
+            { translateY: floatY },
             { scale: Animated.multiply(breathingScale, pressScale) },
           ],
         },
       ]}
     >
-      <View style={[styles.vectorWrapper, shadows.mascotGlow]}>
+      <View style={styles.vectorWrapper}>
         <CompanionVector id={id} mood={mood} size={numericSize} />
       </View>
 

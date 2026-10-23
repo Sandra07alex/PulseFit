@@ -108,6 +108,8 @@ export interface RecentActivityEntry {
   detail: string;
   timeLabel: string;
   accentColor: string;
+  /** ISO timestamp used for newest-first ordering */
+  timestamp?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,4 +150,6 @@ export interface StreakRecord {
   longest: number;
   lastActiveDate: string; // ISO date string
   weeklyActivity: boolean[];
+  /** Local day keys (YYYY-MM-DD) with any logged activity, oldest first */
+  activeDays?: string[];
 }

@@ -2,59 +2,49 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import { FloatingIslandNav, TabItem } from '../../components/navigation/FloatingIslandNav';
-import { useToast } from '../../hooks/useToast';
+import type { QuickActionOption } from '../../components/navigation/QuickActionRadialMenu';
 
 const NAV_TABS: TabItem[] = [
-  { id: 'today', label: 'Today', icon: '🏠' },
-  { id: 'activity', label: 'Activity', icon: '🔥' },
-  { id: 'nutrition', label: 'Nutrition', icon: '🥦' },
-  { id: 'profile', label: 'Profile', icon: '👤' },
+  { id: 'today', label: 'Today', icon: '🏠', tint: 'pulse' },
+  { id: 'move', label: 'Move', icon: '🔥', tint: 'blaze' },
+  { id: 'eat', label: 'Eat', icon: '🥦', tint: 'brocco' },
+  { id: 'stats', label: 'Stats', icon: '📈', tint: 'luna' },
 ];
+
+const TAB_ROUTES = {
+  today: '/(tabs)/home',
+  move: '/(tabs)/workout',
+  eat: '/(tabs)/nutrition',
+  stats: '/(tabs)/progress',
+} as const;
 
 export default function TabLayout() {
   const router = useRouter();
   const pathname = usePathname();
-  const { showSuccess } = useToast();
 
-  // Map route to tab ID
-  const getActiveTabId = () => {
-    if (pathname.includes('/workout')) return 'activity';
-    if (pathname.includes('/nutrition')) return 'nutrition';
-    if (pathname.includes('/profile')) return 'profile';
-    return 'today';
-  };
+  const activeTab = pathname.includes('/workout')
+    ? 'move'
+    : pathname.includes('/nutrition')
+    ? 'eat'
+    : pathname.includes('/progress')
+    ? 'stats'
+    : pathname.includes('/home')
+    ? 'today'
+    : ''; // water & profile are reached from Today, no tab highlighted
 
-  const handleTabPress = (tabId: string) => {
-    switch (tabId) {
-      case 'activity':
-        router.push('/(tabs)/workout');
-        break;
-      case 'nutrition':
-        router.push('/(tabs)/nutrition');
-        break;
-      case 'profile':
-        router.push('/(tabs)/profile');
-        break;
-      case 'today':
-      default:
-        router.push('/(tabs)/home');
-        break;
-    }
-  };
-
-  const handleQuickAction = (actionId: string) => {
+  const handleQuickAction = (actionId: QuickActionOption['id']) => {
     switch (actionId) {
       case 'food':
-        showSuccess('Quick Log: Food item added!', 'brocco');
+        router.push('/food/add');
         break;
       case 'water':
-        showSuccess('Quick Log: +250ml Water logged!', 'droppy');
+        router.navigate('/(tabs)/water');
         break;
       case 'workout':
-        showSuccess('Quick Log: Workout started!', 'blaze');
+        router.navigate({ pathname: '/(tabs)/workout', params: { log: String(Date.now()) } });
         break;
       case 'weight':
-        showSuccess('Quick Log: Weight updated!', 'eggsy');
+        router.navigate({ pathname: '/(tabs)/progress', params: { log: String(Date.now()) } });
         break;
     }
   };
@@ -64,20 +54,21 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: { display: 'none' }, // Hide default tab bar in favor of Floating Island
+          tabBarStyle: { display: 'none' }, // replaced by the Floating Island
+          animation: 'shift',
         }}
       >
         <Tabs.Screen name="home" options={{ title: 'Today' }} />
-        <Tabs.Screen name="workout" options={{ title: 'Activity' }} />
-        <Tabs.Screen name="nutrition" options={{ title: 'Nutrition' }} />
-        <Tabs.Screen name="progress" options={{ title: 'Progress' }} />
+        <Tabs.Screen name="workout" options={{ title: 'Move' }} />
+        <Tabs.Screen name="nutrition" options={{ title: 'Eat' }} />
+        <Tabs.Screen name="progress" options={{ title: 'Stats' }} />
+        <Tabs.Screen name="water" options={{ title: 'Water' }} />
         <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
       </Tabs>
 
-      {/* Floating Island Navigation Layer */}
       <FloatingIslandNav
-        activeTab={getActiveTabId()}
-        onTabPress={handleTabPress}
+        activeTab={activeTab}
+        onTabPress={(id) => router.navigate(TAB_ROUTES[id as keyof typeof TAB_ROUTES])}
         onQuickActionSelect={handleQuickAction}
         tabs={NAV_TABS}
       />

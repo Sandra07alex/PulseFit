@@ -13,7 +13,8 @@
  * Supabase-ready: data shapes mirror future remote table schemas.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { LocalProfileService } from '../../../services/LocalProfileService';
 import { StorageService } from '../../../services/StorageService';
 import { StorageKeys } from '../../../constants/StorageKeys';
@@ -23,6 +24,7 @@ import type {
   RecentActivityEntry,
 } from '../types/dashboard.types';
 import type { NutritionEntry, WaterLog, Workout, WeightLog } from '../../../types/models';
+import { localDateKey, isOnLocalDay } from '../../../utils/date';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,7 +32,7 @@ import type { NutritionEntry, WaterLog, Workout, WeightLog } from '../../../type
 
 /** Returns today's ISO date string (YYYY-MM-DD) */
 function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  return localDateKey();
 }
 
 /** Formats a relative time label like "2h ago", "Just now", "Yesterday" */
@@ -158,6 +160,7 @@ function buildRecentActivity(
       title:       n.foodName,
       detail:      `${n.calories} kcal · ${n.mealType}`,
       timeLabel:   timeAgo(n.loggedAt),
+      timestamp:   n.loggedAt,
       accentColor: colors.companions.eggsy.primary,
     });
   });
@@ -171,6 +174,7 @@ function buildRecentActivity(
       title:       'Water',
       detail:      `${w.amountMl} ml`,
       timeLabel:   timeAgo(w.loggedAt),
+      timestamp:   w.loggedAt,
       accentColor: colors.companions.droppy.primary,
     });
   });
@@ -184,6 +188,7 @@ function buildRecentActivity(
       title:       w.title,
       detail:      `${w.durationMinutes} min · ${w.caloriesBurned} kcal burned`,
       timeLabel:   timeAgo(w.completedAt),
+      timestamp:   w.completedAt,
       accentColor: colors.companions.blaze.primary,
     });
   });
@@ -197,17 +202,14 @@ function buildRecentActivity(
       title:       'Weight Logged',
       detail:      `${w.weightKg} kg`,
       timeLabel:   timeAgo(w.createdAt),
+      timestamp:   w.createdAt,
       accentColor: colors.companions.brocco.primary,
     });
   });
 
   // Sort by most recent first and take top 8
   return entries
-    .sort((a, b) => {
-      // We stored timeLabel as a string — sort by id recency (UUIDs are not time-sortable)
-      // Instead sort by the original ISO dates; rely on array order from storage
-      return 0;
-    })
+    .sort((a, b) => (b.timestamp ?? '').localeCompare(a.timestamp ?? ''))
     .slice(0, 8);
 }
 
@@ -267,7 +269,7 @@ export function useDashboardData(): DashboardDataResult {
       const nutritionLogs = (
         await StorageService.getItem<NutritionEntry[]>(StorageKeys.NUTRITION_LOGS)
       ) ?? [];
-      const todayNutrition = nutritionLogs.filter((n) => n.loggedAt.startsWith(today));
+      const todayNutrition = nutritionLogs.filter((n) => isOnLocalDay(n.loggedAt, today));
       const caloriesToday  = todayNutrition.reduce((s, n) => s + n.calories, 0);
       const proteinToday   = todayNutrition.reduce((s, n) => s + n.proteinGrams, 0);
 
@@ -275,14 +277,14 @@ export function useDashboardData(): DashboardDataResult {
       const waterLogs = (
         await StorageService.getItem<WaterLog[]>(StorageKeys.WATER_LOGS)
       ) ?? [];
-      const todayWater = waterLogs.filter((w) => w.loggedAt.startsWith(today));
+      const todayWater = waterLogs.filter((w) => isOnLocalDay(w.loggedAt, today));
       const waterToday = todayWater.reduce((s, w) => s + w.amountMl, 0);
 
       // 4. Today's workout logs
       const workoutLogs = (
         await StorageService.getItem<Workout[]>(StorageKeys.WORKOUT_LOGS)
       ) ?? [];
-      const todayWorkouts = workoutLogs.filter((w) => w.completedAt.startsWith(today));
+      const todayWorkouts = workoutLogs.filter((w) => isOnLocalDay(w.completedAt, today));
       const workoutMinutes = todayWorkouts.reduce((s, w) => s + w.durationMinutes, 0);
 
       // 5. Weight logs (all time, for recent activity)
@@ -318,9 +320,12 @@ export function useDashboardData(): DashboardDataResult {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Tabs stay mounted, so reload whenever the dashboard is shown again
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   return {
     userName,

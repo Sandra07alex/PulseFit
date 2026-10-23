@@ -1,23 +1,29 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Animated, Modal, Pressable } from 'react-native';
+import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Companion } from '../mascot/Companion';
-import { colors } from '../../theme/colors';
-import { shadows } from '../../theme/shadows';
+import { ClayCard } from '../clay/ClayCard';
+import { clayTints, ClayTint } from '../../theme/clay';
+import { typography } from '../../theme/typography';
 
 export interface QuickActionOption {
   id: 'food' | 'water' | 'workout' | 'weight';
   label: string;
   icon: string;
-  color: string;
+  tint: ClayTint;
   companionId: 'brocco' | 'droppy' | 'blaze' | 'eggsy';
 }
 
 export const QUICK_ACTIONS: QuickActionOption[] = [
-  { id: 'food', label: '+ Food', icon: '🥦', color: colors.companions.brocco.primary, companionId: 'brocco' },
-  { id: 'water', label: '+ Water', icon: '💧', color: colors.companions.droppy.primary, companionId: 'droppy' },
-  { id: 'workout', label: '+ Workout', icon: '🔥', color: colors.companions.blaze.primary, companionId: 'blaze' },
-  { id: 'weight', label: '+ Weight', icon: '⚖️', color: colors.companions.eggsy.primary, companionId: 'eggsy' },
+  { id: 'food', label: 'Food', icon: '🥦', tint: 'brocco', companionId: 'brocco' },
+  { id: 'water', label: 'Water', icon: '💧', tint: 'droppy', companionId: 'droppy' },
+  { id: 'workout', label: 'Workout', icon: '🔥', tint: 'blaze', companionId: 'blaze' },
+  { id: 'weight', label: 'Weight', icon: '⚖️', tint: 'eggsy', companionId: 'eggsy' },
 ];
+
+/** Upward fan, left → right (degrees; 0 = right, -90 = straight up) */
+const ANGLES = [-162, -118, -62, -18];
+const RADIUS = 122;
 
 interface QuickActionRadialMenuProps {
   visible: boolean;
@@ -30,154 +36,137 @@ export const QuickActionRadialMenu: React.FC<QuickActionRadialMenuProps> = ({
   onClose,
   onSelectAction,
 }) => {
-  const animValue = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+  const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(animValue, {
-        toValue: 1,
-        tension: 140,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(animValue, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }).start();
+      anim.setValue(0);
+      Animated.spring(anim, { toValue: 1, tension: 110, friction: 8, useNativeDriver: true }).start();
     }
-  }, [visible, animValue]);
+  }, [visible, anim]);
 
   if (!visible) return null;
 
-  const backdropOpacity = animValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 0.6],
-  });
-
-  const centerScale = animValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.5, 1],
-  });
+  const backdropOpacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-          <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
-        </Pressable>
+    <Modal transparent visible animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close quick log menu">
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+      </Pressable>
 
-        <View style={styles.centerContainer}>
-          {/* Radial action buttons */}
-          {QUICK_ACTIONS.map((action, index) => {
-            // Position radially around center
-            const angle = (index * 90 - 135) * (Math.PI / 180);
-            const radius = 105;
+      <View
+        pointerEvents="box-none"
+        // matches the centre of FloatingIslandNav's mascot button
+        style={[styles.anchor, { bottom: Math.max(insets.bottom, 12) + 6 + 62 }]}
+      >
+        <Animated.Text style={[styles.prompt, { opacity: anim, bottom: RADIUS + 70 }]}>
+          What are we logging? ✨
+        </Animated.Text>
 
-            const translateX = animValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, Math.cos(angle) * radius],
-            });
+        {QUICK_ACTIONS.map((action, i) => {
+          const rad = (ANGLES[i] * Math.PI) / 180;
+          const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(rad) * RADIUS] });
+          const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [0, Math.sin(rad) * RADIUS] });
+          const scale = anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.2, 0.7, 1] });
 
-            const translateY = animValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, Math.sin(angle) * radius],
-            });
-
-            const itemScale = animValue.interpolate({
-              inputRange: [0, 0.4, 1],
-              outputRange: [0, 0.5, 1],
-            });
-
-            return (
-              <Animated.View
-                key={action.id}
-                style={[
-                  styles.actionWrapper,
-                  {
-                    transform: [{ translateX }, { translateY }, { scale: itemScale }],
-                  },
-                ]}
+          return (
+            <Animated.View
+              key={action.id}
+              style={[styles.item, { transform: [{ translateX }, { translateY }, { scale }] }]}
+            >
+              <ClayCard
+                tint={action.tint}
+                depth="md"
+                radius={36}
+                padding={0}
+                glow="strong"
+                onPress={() => {
+                  onSelectAction(action.id);
+                  onClose();
+                }}
+                accessibilityLabel={`Log ${action.label}`}
+                contentStyle={styles.bubble}
               >
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  style={[styles.actionButton, { backgroundColor: action.color }, shadows.lg]}
-                  onPress={() => {
-                    onSelectAction(action.id);
-                    onClose();
-                  }}
-                >
-                  <Text style={styles.actionIcon}>{action.icon}</Text>
-                  <Text style={styles.actionLabel}>{action.label}</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
+                <Companion id={action.companionId} mood="wave" size={48} animated={false} />
+              </ClayCard>
+              <View style={styles.labelPill}>
+                <Text style={[styles.label, { color: clayTints[action.tint].accent }]}>
+                  {action.icon} {action.label}
+                </Text>
+              </View>
+            </Animated.View>
+          );
+        })}
 
-          {/* Center morphing mascot button */}
-          <Animated.View style={[styles.centerMascot, { transform: [{ scale: centerScale }] }]}>
-            <TouchableOpacity activeOpacity={0.9} onPress={onClose} style={styles.closeButtonInner}>
-              <Companion id="pulse" mood="celebrate" size={72} animated={false} />
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+        {/* close button sits exactly over the nav's center button */}
+        <ClayCard
+          tint="cloud"
+          depth="md"
+          radius={40}
+          padding={0}
+          glow="strong"
+          onPress={onClose}
+          accessibilityLabel="Close"
+          contentStyle={styles.close}
+        >
+          <Text style={styles.closeX}>✕</Text>
+        </ClayCard>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0F172A',
+    backgroundColor: 'rgba(46, 35, 80, 0.42)',
   },
-  centerContainer: {
-    width: 280,
-    height: 280,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginBottom: 20,
-  },
-  actionWrapper: {
+  anchor: {
     position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 0,
   },
-  actionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 999,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    minWidth: 100,
-  },
-  actionIcon: {
-    fontSize: 18,
-  },
-  actionLabel: {
+  prompt: {
+    position: 'absolute',
+    fontFamily: typography.fonts.display,
+    fontSize: 20,
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
   },
-  centerMascot: {
+  item: {
     position: 'absolute',
+    alignItems: 'center',
+  },
+  bubble: {
+    width: 70,
+    height: 70,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeButtonInner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  labelPill: {
+    marginTop: 4,
+    backgroundColor: '#FFFFFF',
     borderRadius: 999,
-    padding: 6,
-    ...shadows.mascotGlow,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  label: {
+    fontFamily: typography.fonts.display,
+    fontSize: 12,
+  },
+  close: {
+    width: 74,
+    height: 74,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeX: {
+    fontSize: 26,
+    color: '#7B66FF',
+    fontFamily: typography.fonts.display,
   },
 });

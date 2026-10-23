@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Animated, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { ViewStyle } from 'react-native';
+import { ClayCard } from '../clay/ClayCard';
+import { splitStyle, radiusOf } from '../clay/splitStyle';
 import { radius } from '../../theme/radius';
-import { shadows } from '../../theme/shadows';
-import { useCardLiftAnimation } from '../../hooks/useMotion';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -14,6 +13,9 @@ export interface CardProps {
   accessibilityLabel?: string;
 }
 
+const PADDING = { none: 0, sm: 12, md: 18, lg: 24 } as const;
+
+/** Card – rendered as a clay 3D surface */
 export const Card: React.FC<CardProps> = ({
   children,
   variant = 'default',
@@ -22,100 +24,21 @@ export const Card: React.FC<CardProps> = ({
   style,
   accessibilityLabel,
 }) => {
-  const { scale, translateY, handleTouchStart, handleTouchEnd } = useCardLiftAnimation();
-
-  const getPadding = () => {
-    switch (padding) {
-      case 'none':
-        return 0;
-      case 'sm':
-        return 12;
-      case 'lg':
-        return 24;
-      case 'md':
-      default:
-        return 18;
-    }
-  };
-
-  const getVariantStyle = () => {
-    switch (variant) {
-      case 'hero':
-        return {
-          backgroundColor: colors.surface,
-          borderRadius: radius.heroCard,
-          borderWidth: 1,
-          borderColor: colors.gray200,
-          ...shadows.xl,
-        };
-      case 'elevated':
-        return {
-          backgroundColor: colors.surface,
-          borderRadius: radius.card,
-          ...shadows.cardLift,
-        };
-      case 'soft':
-        return {
-          backgroundColor: colors.gray50,
-          borderRadius: radius.card,
-        };
-      case 'outlined':
-        return {
-          backgroundColor: colors.surface,
-          borderRadius: radius.card,
-          borderWidth: 1.5,
-          borderColor: colors.gray200,
-        };
-      case 'default':
-      default:
-        return {
-          backgroundColor: colors.surface,
-          borderRadius: radius.card,
-          ...shadows.card,
-        };
-    }
-  };
-
-  const cardContent = (
-    <View style={[styles.innerContainer, { padding: getPadding() }]}>
-      {children}
-    </View>
-  );
-
-  if (onPress) {
-    return (
-      <Animated.View
-        style={[
-          getVariantStyle(),
-          {
-            transform: [{ scale }, { translateY }],
-          },
-          style,
-        ]}
-      >
-        <TouchableOpacity
-          activeOpacity={0.92}
-          onPress={onPress}
-          onPressIn={handleTouchStart}
-          onPressOut={handleTouchEnd}
-          accessibilityRole="button"
-          accessibilityLabel={accessibilityLabel}
-        >
-          {cardContent}
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  }
-
+  const { outer, inner } = splitStyle(style);
+  const isHero = variant === 'hero';
   return (
-    <View style={[getVariantStyle(), style]}>
-      {cardContent}
-    </View>
+    <ClayCard
+      tint="cloud"
+      depth={variant === 'soft' || variant === 'outlined' ? 'sm' : isHero ? 'lg' : 'md'}
+      glow={variant === 'soft' ? 'none' : isHero || variant === 'elevated' ? 'strong' : 'medium'}
+      radius={radiusOf(style, isHero ? radius.heroCard : radius.card)}
+      padding={PADDING[padding]}
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+      style={outer}
+      contentStyle={inner}
+    >
+      {children}
+    </ClayCard>
   );
 };
-
-const styles = StyleSheet.create({
-  innerContainer: {
-    overflow: 'hidden',
-  },
-});

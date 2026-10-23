@@ -1,2 +1,2 @@
-// Hydration services placeholder
-// Hydration-specific services will be implemented here
+// Hydration services
+export { WaterRepository } from './WaterRepository';

@@ -23,3 +23,4 @@ export const theme = {
 } as const;
 
 export type Theme = typeof theme;
+export * from './clay';

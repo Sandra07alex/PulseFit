@@ -18,6 +18,10 @@ export const StorageKeys = {
   FOOD_CATALOG: '@pulsefit/food_catalog',
   FOOD_LOGS: '@pulsefit/food_logs',
   FOOD_CATALOG_SEEDED: '@pulsefit/food_catalog_seeded',
+  RECENT_FOOD_IDS: '@pulsefit/recent_food_ids',
+  // Engagement
+  STREAK: '@pulsefit/streak',
+  ONBOARDING: '@pulsefit/onboarding_data',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

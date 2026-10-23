@@ -7,6 +7,8 @@ const MET_VALUES: Record<string, number> = {
   Running: 9.8,
   Cycling: 7.5,
   Swimming: 8.3,
+  Walking: 3.5,
+  Dance: 6.5,
 };
 
 export const WorkoutCalculator = {
