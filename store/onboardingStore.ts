@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { StorageService } from '../services/StorageService';
+import { StorageKeys } from '../constants/StorageKeys';
 
 export type GoalOption = 'lose_fat' | 'build_muscle' | 'stay_healthy' | 'improve_fitness' | 'increase_endurance';
 export type ActivityLevelOption = 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'athlete';
@@ -28,11 +29,12 @@ interface OnboardingStoreState extends OnboardingData {
   nextStep: () => void;
   prevStep: () => void;
   updateData: (data: Partial<OnboardingData>) => void;
-  completeOnboarding: () => void;
+  /** Resolves once the completion flag is saved */
+  completeOnboarding: () => Promise<void>;
   resetOnboarding: () => void;
 }
 
-const STORAGE_KEY = '@pulsefit/onboarding_data' as any;
+const STORAGE_KEY = StorageKeys.ONBOARDING;
 
 const initialData: OnboardingData = {
   step: 1,
@@ -89,7 +91,7 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
 
   completeOnboarding: () => {
     set({ isCompleted: true });
-    StorageService.setItem(STORAGE_KEY, { ...get(), isCompleted: true });
+    return StorageService.setItem(STORAGE_KEY, { ...get(), isCompleted: true });
   },
 
   resetOnboarding: () => {

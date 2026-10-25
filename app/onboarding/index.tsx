@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../store/onboardingStore';
@@ -17,6 +17,23 @@ import { Step8Celebration } from '../../features/onboarding/steps/Step8Celebrati
 export default function OnboardingScreen() {
   const router = useRouter();
   const store = useOnboardingStore();
+  const [checking, setChecking] = useState(true);
+
+  // Onboarding runs once: anyone who already has a profile goes straight to Today.
+  // Both reset flows delete the profile before navigating here, so they still work.
+  useEffect(() => {
+    let active = true;
+    LocalProfileService.isProfileCreated()
+      .then((exists) => {
+        if (!active) return;
+        if (exists) router.replace('/(tabs)/home');
+        else setChecking(false);
+      })
+      .catch(() => active && setChecking(false));
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -62,7 +79,7 @@ export default function OnboardingScreen() {
     } catch (err) {
       console.warn('[Onboarding] Error saving profile:', err);
     }
-    store.completeOnboarding();
+    await store.completeOnboarding();
     router.replace('/(tabs)/home');
   };
 
@@ -140,6 +157,8 @@ export default function OnboardingScreen() {
         return <Step8Celebration onComplete={handleComplete} />;
     }
   };
+
+  if (checking) return <ScreenContainer>{null}</ScreenContainer>;
 
   return (
     <ScreenContainer>

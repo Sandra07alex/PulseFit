@@ -8,8 +8,8 @@ export default function Index() {
   const [target, setTarget] = useState<'/(tabs)/home' | '/onboarding' | null>(null);
 
   useEffect(() => {
-    LocalProfileService.isProfileCreated()
-      .then((exists) => setTarget(exists ? '/(tabs)/home' : '/onboarding'))
+    LocalProfileService.hasCompletedOnboarding()
+      .then((done) => setTarget(done ? '/(tabs)/home' : '/onboarding'))
       .catch(() => setTarget('/onboarding'));
   }, []);
 

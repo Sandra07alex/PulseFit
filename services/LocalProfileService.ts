@@ -59,6 +59,17 @@ class LocalProfileServiceImpl {
     return !!profile;
   }
 
+  /**
+   * True once the user has finished onboarding. Checks the profile first and
+   * falls back to the onboarding store's completion flag, so a failed profile
+   * write never sends a returning user back through onboarding.
+   */
+  async hasCompletedOnboarding(): Promise<boolean> {
+    if (await this.isProfileCreated()) return true;
+    const data = await StorageService.getItem<{ isCompleted?: boolean }>(StorageKeys.ONBOARDING);
+    return !!data?.isCompleted;
+  }
+
   async createProfile(data: Partial<UserProfile>): Promise<UserProfile> {
     const now = new Date().toISOString();
     const newProfile: UserProfile = {
