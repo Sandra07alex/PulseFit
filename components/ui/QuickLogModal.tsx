@@ -4,9 +4,13 @@ import { FloatingModal } from './FloatingModal';
 import { Button } from './Button';
 import { colors } from '../../theme/colors';
 import { radius } from '../../theme/radius';
-import { FoodRepository, WaterRepository, WorkoutRepository, WeightRepository } from '../../services/repositories';
+import { WaterRepository, WorkoutRepository, WeightRepository } from '../../services/repositories';
+import { FoodLogRepository } from '../../features/food/repository/FoodLogRepository';
 import { useToast } from '../../hooks/useToast';
 import { useHaptics } from '../../hooks/useHaptics';
+
+/** foodId for quick logs, which have no food catalog entry */
+const QUICK_FOOD_ID = 'quick_log';
 
 export type QuickLogType = 'food' | 'water' | 'workout' | 'weight' | null;
 
@@ -69,16 +73,18 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
         const calNum = parseInt(calories, 10) || 0;
         const protNum = parseInt(protein, 10) || 0;
         const name = foodName.trim() || 'Logged Meal';
-        await FoodRepository.create({
+        // Log through the food feature so it shows on the Eat tab (and is mirrored to the dashboard)
+        await FoodLogRepository.create({
+          foodId: QUICK_FOOD_ID,
           foodName: name,
-          calories: calNum,
-          proteinGrams: protNum,
-          carbsGrams: Math.round(calNum * 0.4 / 4),
-          fatGrams: Math.round(calNum * 0.3 / 9),
-          mealType,
-          loggedAt: new Date().toISOString(),
-          userId: 'local_user',
-          servingSize: '1 serving',
+          mealType: mealType === 'Snack' ? 'Snacks' : mealType,
+          quantity: 1,
+          servingUnit: 'pieces',
+          calculatedCalories: calNum,
+          calculatedProtein: protNum,
+          calculatedCarbs: Math.round(calNum * 0.4 / 4),
+          calculatedFat: Math.round(calNum * 0.3 / 9),
+          calculatedFiber: 0,
         });
         toast.showSuccess(`Logged ${name} (${calNum} kcal)`);
       } else if (type === 'water') {

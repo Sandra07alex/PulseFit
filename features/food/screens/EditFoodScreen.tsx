@@ -30,7 +30,7 @@ import { QuantitySelector }     from '../components/QuantitySelector';
 import { FoodCatalogRepository } from '../repository/FoodCatalogRepository';
 import { FoodLogRepository }     from '../repository/FoodLogRepository';
 import { useFoodLogs }           from '../hooks/useFoodLogs';
-import { calculateNutrition }    from '../utils/nutritionCalculator';
+import { calculateNutrition, foodFromLog } from '../utils/nutritionCalculator';
 import { confirmAction }         from '../../../utils/confirm';
 
 import { colors }     from '../../../theme/colors';
@@ -91,11 +91,10 @@ export const EditFoodScreen: React.FC = () => {
           setUnit(found.servingUnit);
           setMealType(found.mealType);
 
-          const catalogFood = await FoodCatalogRepository.getById(found.foodId);
-          if (catalogFood) {
-            setFood(catalogFood);
-            setNutrition(calculateNutrition(catalogFood, found.quantity, found.servingUnit));
-          }
+          const catalogFood =
+            (await FoodCatalogRepository.getById(found.foodId)) ?? foodFromLog(found);
+          setFood(catalogFood);
+          setNutrition(calculateNutrition(catalogFood, found.quantity, found.servingUnit));
         }
       } catch (err) {
         console.error('[EditFoodScreen] Load error:', err);

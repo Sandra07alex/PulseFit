@@ -22,7 +22,7 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
         <Companion id="pulse" mood="wave" size="md" animated={true} />
 
         <View style={styles.bubble}>
-          <Text style={styles.quoteText}>"{quote}"</Text>
+          <Text style={styles.quoteText}>&ldquo;{quote}&rdquo;</Text>
           <Text style={styles.authorText}>— {author}</Text>
         </View>
       </View>

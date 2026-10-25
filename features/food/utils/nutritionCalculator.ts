@@ -71,6 +71,30 @@ export function calculateNutrition(
 }
 
 /**
+ * Stand-in catalog item for a log with no catalog food (e.g. a quick log),
+ * so editing its quantity scales the logged nutrition proportionally.
+ */
+export function foodFromLog(log: FoodLogEntry): FoodCatalogItem {
+  return {
+    id:          log.foodId,
+    name:        log.foodName,
+    category:    'Snacks',
+    servingSize: log.quantity,
+    servingUnit: log.servingUnit,
+    calories:    log.calculatedCalories,
+    protein:     log.calculatedProtein,
+    carbs:       log.calculatedCarbs,
+    fat:         log.calculatedFat,
+    fiber:       log.calculatedFiber,
+    sugar:       0,
+    sodium:      0,
+    isFavorite:  false,
+    createdAt:   log.loggedAt,
+    updatedAt:   log.loggedAt,
+  };
+}
+
+/**
  * Calculate nutrition for a log entry using the catalog reference.
  * Recomputes from the original serving ratio for accuracy.
  */

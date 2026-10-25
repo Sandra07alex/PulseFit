@@ -13,7 +13,7 @@ import { useState, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { FoodLogRepository } from '../repository/FoodLogRepository';
 import { FoodCatalogRepository } from '../repository/FoodCatalogRepository';
-import { calculateNutrition } from '../utils/nutritionCalculator';
+import { calculateNutrition, foodFromLog } from '../utils/nutritionCalculator';
 import type {
   FoodLogEntry,
   MealGroup,
@@ -108,9 +108,9 @@ export function useFoodLogs(): UseFoodLogsResult {
       }
       if (!currentLog) return;
 
-      // Re-fetch food for accurate nutrition calculation
-      const food = await FoodCatalogRepository.getById(currentLog.foodId);
-      if (!food) return;
+      // Re-fetch food for accurate nutrition calculation (quick logs have no catalog item)
+      const food =
+        (await FoodCatalogRepository.getById(currentLog.foodId)) ?? foodFromLog(currentLog);
 
       const nutrition = calculateNutrition(food, quantity, unit);
 
