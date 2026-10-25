@@ -37,6 +37,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useWater }         from '../hooks/useWater';
 import { usePressAnimation } from '../../../hooks/useMotion';
+import { confirmAction }     from '../../../utils/confirm';
 
 import { colors }     from '../../../theme/colors';
 import { spacing }    from '../../../theme/spacing';
@@ -459,15 +460,11 @@ export function WaterScreen() {
     await addWater(amount);
   }, [addWater]);
 
-  const handleDelete = useCallback((id: string) => {
-    Alert.alert(
-      'Delete Log',
-      'Remove this water entry?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => removeLog(id) },
-      ]
-    );
+  const handleDelete = useCallback(async (id: string) => {
+    // confirmAction falls back to window.confirm on web, where Alert buttons do nothing
+    if (await confirmAction('Delete Log', 'Remove this water entry?')) {
+      await removeLog(id);
+    }
   }, [removeLog]);
 
   // Format display values

@@ -26,7 +26,6 @@ class WeightRepositoryImpl {
   }
 
   async create(data: { weightKg: number; date?: string }): Promise<WeightLog> {
-    const all = await this.getAll();
     const now = new Date().toISOString();
     const newEntry: WeightLog = {
       id: `weight_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -34,8 +33,7 @@ class WeightRepositoryImpl {
       date: data.date || getTodayDateStr(),
       createdAt: now,
     };
-    const updated = [newEntry, ...all];
-    await StorageService.setItem(StorageKeys.WEIGHT_LOGS, updated);
+    await StorageService.update<WeightLog[]>(StorageKeys.WEIGHT_LOGS, (all) => [newEntry, ...(all ?? [])]);
     await StreakService.recordActivity(newEntry.createdAt);
     return newEntry;
   }
@@ -57,13 +55,13 @@ class WeightRepositoryImpl {
   }
 
   async delete(id: string): Promise<boolean> {
-    const all = await this.getAll();
-    const filtered = all.filter((item) => item.id !== id);
-    if (filtered.length !== all.length) {
-      await StorageService.setItem(StorageKeys.WEIGHT_LOGS, filtered);
-      return true;
-    }
-    return false;
+    let found = false;
+    await StorageService.update<WeightLog[]>(StorageKeys.WEIGHT_LOGS, (all) => {
+      const filtered = (all ?? []).filter((item) => item.id !== id);
+      found = filtered.length !== (all ?? []).length;
+      return filtered;
+    });
+    return found;
   }
 }
 

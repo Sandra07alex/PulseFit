@@ -25,8 +25,16 @@ const SEED_DATA: FoodCatalogItem[] = require('./foods.json');
  * 4. Set the seeded flag.
  *
  * This ensures user-added foods and favorites are never overwritten.
+ * Concurrent callers share one in-flight run, so reads can safely await it.
  */
-export async function seedFoodCatalog(): Promise<void> {
+let seeding: Promise<void> | null = null;
+
+export function seedFoodCatalog(): Promise<void> {
+  seeding ??= runSeed();
+  return seeding;
+}
+
+async function runSeed(): Promise<void> {
   try {
     const alreadySeeded = await StorageService.getItem<boolean>(
       StorageKeys.FOOD_CATALOG_SEEDED

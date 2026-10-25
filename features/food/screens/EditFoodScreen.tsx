@@ -31,6 +31,7 @@ import { FoodCatalogRepository } from '../repository/FoodCatalogRepository';
 import { FoodLogRepository }     from '../repository/FoodLogRepository';
 import { useFoodLogs }           from '../hooks/useFoodLogs';
 import { calculateNutrition }    from '../utils/nutritionCalculator';
+import { confirmAction }         from '../../../utils/confirm';
 
 import { colors }     from '../../../theme/colors';
 import { radius }     from '../../../theme/radius';
@@ -93,7 +94,7 @@ export const EditFoodScreen: React.FC = () => {
           const catalogFood = await FoodCatalogRepository.getById(found.foodId);
           if (catalogFood) {
             setFood(catalogFood);
-            setNutrition(calculateNutrition(catalogFood, found.quantity));
+            setNutrition(calculateNutrition(catalogFood, found.quantity, found.servingUnit));
           }
         }
       } catch (err) {
@@ -107,8 +108,8 @@ export const EditFoodScreen: React.FC = () => {
   // Live nutrition update
   useEffect(() => {
     if (!food) return;
-    setNutrition(calculateNutrition(food, quantity));
-  }, [food, quantity]);
+    setNutrition(calculateNutrition(food, quantity, unit));
+  }, [food, quantity, unit]);
 
   const handleSave = useCallback(async () => {
     if (!log || !food || isSaving) return;
@@ -123,23 +124,13 @@ export const EditFoodScreen: React.FC = () => {
     }
   }, [log, food, quantity, mealType, unit, updateLog, isSaving, router]);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     if (!log) return;
-    Alert.alert(
-      'Delete Food Log',
-      `Remove ${log.foodName} from ${log.mealType}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteLog(log.id);
-            router.back();
-          },
-        },
-      ]
-    );
+    // confirmAction falls back to window.confirm on web, where Alert buttons do nothing
+    const ok = await confirmAction('Delete Food Log', `Remove ${log.foodName} from ${log.mealType}?`);
+    if (!ok) return;
+    await deleteLog(log.id);
+    router.back();
   }, [log, deleteLog, router]);
 
   if (isLoading) {

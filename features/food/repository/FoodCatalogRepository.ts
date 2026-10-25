@@ -24,6 +24,8 @@ class FoodCatalogRepositoryImpl {
   // ---------------------------------------------------------------------------
 
   private async getAll_raw(): Promise<FoodCatalogItem[]> {
+    // Screens like Add Food can open before the Eat tab ever seeded the catalog
+    await seedFoodCatalog();
     const items = await StorageService.getItem<FoodCatalogItem[]>(
       StorageKeys.FOOD_CATALOG
     );

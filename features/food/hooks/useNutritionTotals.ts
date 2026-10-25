@@ -3,7 +3,8 @@
  * @description Hook that computes today's nutrition progress against profile goals.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { FoodLogRepository } from '../repository/FoodLogRepository';
 import { LocalProfileService } from '../../../services/LocalProfileService';
 import {
@@ -31,9 +32,9 @@ export function useNutritionTotals(): UseNutritionTotalsResult {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (showSpinner = true) => {
     try {
-      setIsLoading(true);
+      if (showSpinner) setIsLoading(true);
       const [totals, profile] = await Promise.all([
         FoodLogRepository.getNutritionTotals(),
         LocalProfileService.getProfile(),
@@ -51,9 +52,13 @@ export function useNutritionTotals(): UseNutritionTotalsResult {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Tabs stay mounted, so reload (quietly) whenever the screen regains focus —
+  // otherwise food added or edited on another route never shows up here.
+  useFocusEffect(
+    useCallback(() => {
+      load(false);
+    }, [load])
+  );
 
-  return { progress, isLoading, refresh: load };
+  return { progress, isLoading, refresh: () => load() };
 }

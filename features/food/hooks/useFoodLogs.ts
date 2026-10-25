@@ -9,7 +9,8 @@
  *  - Loading / refreshing state
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { FoodLogRepository } from '../repository/FoodLogRepository';
 import { FoodCatalogRepository } from '../repository/FoodCatalogRepository';
 import { calculateNutrition } from '../utils/nutritionCalculator';
@@ -55,9 +56,9 @@ export function useFoodLogs(): UseFoodLogsResult {
   const [dailyTotals, setDailyTotals] = useState<NutritionTotals>(EMPTY_TOTALS);
   const [isLoading,   setIsLoading]   = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (showSpinner = true) => {
     try {
-      setIsLoading(true);
+      if (showSpinner) setIsLoading(true);
       const groups = await FoodLogRepository.getTodayMealGroups();
       const totals = await FoodLogRepository.getNutritionTotals();
       setMealGroups(groups);
@@ -69,12 +70,16 @@ export function useFoodLogs(): UseFoodLogsResult {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Tabs stay mounted, so reload (quietly) whenever the screen regains focus —
+  // otherwise food added or edited on another route never shows up here.
+  useFocusEffect(
+    useCallback(() => {
+      load(false);
+    }, [load])
+  );
 
   const createLog = useCallback(async (payload: CreateLogPayload): Promise<FoodLogEntry> => {
-    const nutrition = calculateNutrition(payload.food, payload.quantity);
+    const nutrition = calculateNutrition(payload.food, payload.quantity, payload.servingUnit);
     const entry = await FoodLogRepository.create({
       foodId:             payload.foodId,
       foodName:           payload.foodName,
@@ -107,8 +112,7 @@ export function useFoodLogs(): UseFoodLogsResult {
       const food = await FoodCatalogRepository.getById(currentLog.foodId);
       if (!food) return;
 
-      // Build a temporary food with the right serving size for the new unit
-      const nutrition = calculateNutrition(food, quantity);
+      const nutrition = calculateNutrition(food, quantity, unit);
 
       await FoodLogRepository.update(id, {
         quantity,
@@ -137,6 +141,6 @@ export function useFoodLogs(): UseFoodLogsResult {
     createLog,
     updateLog,
     deleteLog,
-    refresh: load,
+    refresh: () => load(),
   };
 }

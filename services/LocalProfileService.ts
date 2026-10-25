@@ -1,6 +1,24 @@
 import { StorageService } from './StorageService';
 import { StorageKeys } from '../constants/StorageKeys';
 import type { UserProfile } from '../types/models';
+import { NutritionCalculator } from './NutritionCalculator';
+import { WaterCalculator } from './WaterCalculator';
+
+/** Daily calorie / protein / water targets for a body weight and fitness goal */
+export function deriveDailyGoals(
+  weightKg: number,
+  goal: string
+): Pick<UserProfile, 'calorieGoal' | 'proteinGoalGrams' | 'waterGoalMl'> {
+  const macros = NutritionCalculator.calculateDailyMacros(
+    weightKg || 70,
+    goal === 'lose_fat' ? 'cut' : goal === 'build_muscle' ? 'bulk' : 'maintain'
+  );
+  return {
+    calorieGoal: macros.calories,
+    proteinGoalGrams: macros.proteinGrams,
+    waterGoalMl: WaterCalculator.calculateDailyTargetMl(weightKg || 70),
+  };
+}
 
 export const DEFAULT_PROFILE: UserProfile = {
   name: 'Athlete',
@@ -55,9 +73,15 @@ class LocalProfileServiceImpl {
 
   async updateProfile(data: Partial<UserProfile>): Promise<UserProfile | null> {
     const existing = await this.getProfile();
+    const base = existing || DEFAULT_PROFILE;
     const now = new Date().toISOString();
+    // Targets are derived from weight + goal, so keep them in step when either changes
+    const bodyChanged =
+      (data.weightKg !== undefined && data.weightKg !== base.weightKg) ||
+      (data.goal !== undefined && data.goal !== base.goal);
     const updated: UserProfile = {
-      ...(existing || DEFAULT_PROFILE),
+      ...base,
+      ...(bodyChanged ? deriveDailyGoals(data.weightKg ?? base.weightKg, data.goal ?? base.goal) : {}),
       ...data,
       updatedAt: now,
     };

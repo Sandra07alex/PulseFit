@@ -18,6 +18,7 @@ import { spacing }    from '../../../theme/spacing';
 import { shadows }    from '../../../theme/shadows';
 import { typography } from '../../../theme/typography';
 import { SERVING_UNITS } from '../types/food.types';
+import { compatibleUnits, convertQuantity } from '../utils/nutritionCalculator';
 import type { ServingUnit } from '../types/food.types';
 
 interface QuantitySelectorProps {
@@ -49,6 +50,17 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
     },
     [onQuantityChange]
   );
+
+  // Only offer units we can convert to the food's reference unit
+  const units = SERVING_UNITS.filter(({ value }) => compatibleUnits(defaultUnit).includes(value));
+
+  const changeUnit = (next: ServingUnit) => {
+    if (next === unit) return;
+    const converted = convertQuantity(quantity, unit, next);
+    setRawInput(String(converted));
+    onQuantityChange(converted);
+    onUnitChange(next);
+  };
 
   const adjust = (delta: number) => {
     const next = Math.max(1, quantity + delta);
@@ -120,28 +132,32 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         </Text>
       </TouchableOpacity>
 
-      {/* Unit selector */}
-      <Text style={[styles.label, { marginTop: spacing.md }]}>Unit</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.unitList}
-      >
-        {SERVING_UNITS.map(({ value, label }) => (
-          <TouchableOpacity
-            key={value}
-            style={[styles.unitChip, unit === value && styles.unitChipActive]}
-            onPress={() => onUnitChange(value)}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityState={{ selected: unit === value }}
+      {/* Unit selector (hidden when the food has a single usable unit) */}
+      {units.length > 1 && (
+        <>
+          <Text style={[styles.label, { marginTop: spacing.md }]}>Unit</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.unitList}
           >
-            <Text style={[styles.unitChipText, unit === value && styles.unitChipTextActive]}>
-              {value}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            {units.map(({ value, label }) => (
+              <TouchableOpacity
+                key={value}
+                style={[styles.unitChip, unit === value && styles.unitChipActive]}
+                onPress={() => changeUnit(value)}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+                accessibilityState={{ selected: unit === value }}
+              >
+                <Text style={[styles.unitChipText, unit === value && styles.unitChipTextActive]}>
+                  {value}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 };

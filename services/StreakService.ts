@@ -63,15 +63,17 @@ class StreakServiceImpl {
     try {
       const key = localDateKey(at);
       const record = await this.read();
-      const days = new Set(record?.activeDays ?? (record?.lastActiveDate ? [record.lastActiveDate] : []));
-      if (days.has(key)) return;
-      days.add(key);
-      const activeDays = [...days].sort().slice(-HISTORY_DAYS);
-      const summary = this.summarize(activeDays);
-      await StorageService.setItem<StreakRecord>(StorageKeys.STREAK, {
-        ...summary,
-        longest: Math.max(summary.longest, record?.longest ?? 0),
-        activeDays,
+      if (record?.activeDays?.includes(key)) return;
+      await StorageService.update<StreakRecord>(StorageKeys.STREAK, (latest) => {
+        const days = new Set(latest?.activeDays ?? (latest?.lastActiveDate ? [latest.lastActiveDate] : []));
+        days.add(key);
+        const activeDays = [...days].sort().slice(-HISTORY_DAYS);
+        const summary = this.summarize(activeDays);
+        return {
+          ...summary,
+          longest: Math.max(summary.longest, latest?.longest ?? 0),
+          activeDays,
+        };
       });
     } catch (err) {
       console.warn('[StreakService] recordActivity failed:', err);

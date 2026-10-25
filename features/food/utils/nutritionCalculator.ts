@@ -14,7 +14,34 @@ import type {
   NutritionTotals,
   NutritionGoals,
   NutritionProgress,
+  ServingUnit,
 } from '../types/food.types';
+
+// ---------------------------------------------------------------------------
+// Unit conversion
+// ---------------------------------------------------------------------------
+
+/** Volume units in millilitres. Grams and pieces have no generic conversion. */
+const ML_PER_UNIT: Partial<Record<ServingUnit, number>> = {
+  ml:   1,
+  tsp:  5,
+  tbsp: 15,
+  cup:  240,
+};
+
+/** Units a quantity of this food can be entered in (always includes the base unit) */
+export function compatibleUnits(baseUnit: ServingUnit): ServingUnit[] {
+  if (ML_PER_UNIT[baseUnit] === undefined) return [baseUnit];
+  return Object.keys(ML_PER_UNIT) as ServingUnit[];
+}
+
+/** Convert a quantity between two compatible units; returns it unchanged otherwise */
+export function convertQuantity(quantity: number, from: ServingUnit, to: ServingUnit): number {
+  const a = ML_PER_UNIT[from];
+  const b = ML_PER_UNIT[to];
+  if (from === to || a === undefined || b === undefined) return quantity;
+  return Math.round(((quantity * a) / b) * 100) / 100;
+}
 
 // ---------------------------------------------------------------------------
 // Core calculation
@@ -24,14 +51,16 @@ import type {
  * Calculate the actual nutritional values for a given quantity of food.
  *
  * @param food     - The catalog item with per-serving nutrition
- * @param quantity - Amount consumed (in the same unit as food.servingUnit)
+ * @param quantity - Amount consumed
+ * @param unit     - Unit of `quantity` (defaults to food.servingUnit)
  * @returns        - Scaled nutrition values
  */
 export function calculateNutrition(
   food: FoodCatalogItem,
-  quantity: number
+  quantity: number,
+  unit: ServingUnit = food.servingUnit
 ): NutritionTotals {
-  const ratio = quantity / food.servingSize;
+  const ratio = convertQuantity(quantity, unit, food.servingUnit) / food.servingSize;
   return {
     calories: Math.round(food.calories * ratio),
     protein:  Math.round(food.protein  * ratio * 10) / 10,
@@ -49,7 +78,7 @@ export function recalculateLogEntry(
   log: FoodLogEntry,
   food: FoodCatalogItem
 ): Partial<FoodLogEntry> {
-  const nutrition = calculateNutrition(food, log.quantity);
+  const nutrition = calculateNutrition(food, log.quantity, log.servingUnit);
   return {
     calculatedCalories: nutrition.calories,
     calculatedProtein:  nutrition.protein,
@@ -162,9 +191,10 @@ export function buildNutritionProgress(
 
 /** Derive macro goals from calorie goal using standard ratios */
 export function deriveDefaultGoals(calorieGoal: number, proteinGoalGrams: number): NutritionGoals {
-  // Standard split: Protein from profile, Carbs ~50%, Fat ~25%
-  const carbsCal   = calorieGoal * 0.50;
+  // Protein from profile, Fat ~25%, Carbs fill the remaining calories
+  // (same split as NutritionCalculator.calculateDailyMacros used at onboarding)
   const fatCal     = calorieGoal * 0.25;
+  const carbsCal   = Math.max(0, calorieGoal - proteinGoalGrams * 4 - fatCal);
   return {
     calories: calorieGoal,
     protein:  proteinGoalGrams,

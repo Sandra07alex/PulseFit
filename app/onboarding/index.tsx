@@ -3,7 +3,7 @@ import { View, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
-import { LocalProfileService, NutritionCalculator, WaterCalculator } from '../../services';
+import { LocalProfileService, deriveDailyGoals } from '../../services';
 import { OnboardingProgressIndicator } from '../../features/onboarding/components/OnboardingProgressIndicator';
 import { Step1Welcome } from '../../features/onboarding/steps/Step1Welcome';
 import { Step2Goal } from '../../features/onboarding/steps/Step2Goal';
@@ -42,12 +42,6 @@ export default function OnboardingScreen() {
 
   const handleComplete = async () => {
     try {
-      const macros = NutritionCalculator.calculateDailyMacros(
-        store.weightKg || 70,
-        store.goal === 'lose_fat' ? 'cut' : store.goal === 'build_muscle' ? 'bulk' : 'maintain'
-      );
-      const waterMl = WaterCalculator.calculateDailyTargetMl(store.weightKg || 70);
-
       await LocalProfileService.createProfile({
         name: 'Pulse Athlete',
         age: store.age,
@@ -57,9 +51,7 @@ export default function OnboardingScreen() {
         targetWeightKg: store.targetWeightKg || store.weightKg,
         goal: store.goal,
         activityLevel: store.activityLevel,
-        waterGoalMl: waterMl,
-        calorieGoal: macros.calories,
-        proteinGoalGrams: macros.proteinGrams,
+        ...deriveDailyGoals(store.weightKg, store.goal),
         unitSystem: store.unitSystem,
         reminderSettings: {
           preset: store.reminderPreset,

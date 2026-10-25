@@ -29,7 +29,6 @@ class WaterRepositoryImpl {
   }
 
   async create(data: { amount: number; loggedAt?: string; userId?: string }): Promise<HydrationEntry> {
-    const all = await this.getAll();
     const nowIso = new Date().toISOString();
     const newEntry: HydrationEntry = {
       id: `water_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -39,8 +38,7 @@ class WaterRepositoryImpl {
       loggedAt: data.loggedAt || nowIso,
       createdAt: new Date(),
     };
-    const updated = [newEntry, ...all];
-    await StorageService.setItem(StorageKeys.WATER_LOGS, updated);
+    await StorageService.update<HydrationEntry[]>(StorageKeys.WATER_LOGS, (all) => [newEntry, ...(all ?? [])]);
     await StreakService.recordActivity(newEntry.loggedAt);
     return newEntry;
   }
@@ -62,13 +60,13 @@ class WaterRepositoryImpl {
   }
 
   async delete(id: string): Promise<boolean> {
-    const all = await this.getAll();
-    const filtered = all.filter((item) => item.id !== id);
-    if (filtered.length !== all.length) {
-      await StorageService.setItem(StorageKeys.WATER_LOGS, filtered);
-      return true;
-    }
-    return false;
+    let found = false;
+    await StorageService.update<HydrationEntry[]>(StorageKeys.WATER_LOGS, (all) => {
+      const filtered = (all ?? []).filter((item) => item.id !== id);
+      found = filtered.length !== (all ?? []).length;
+      return filtered;
+    });
+    return found;
   }
 }
 

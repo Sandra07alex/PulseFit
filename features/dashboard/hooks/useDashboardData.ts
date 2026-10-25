@@ -270,8 +270,10 @@ export function useDashboardData(): DashboardDataResult {
         await StorageService.getItem<NutritionEntry[]>(StorageKeys.NUTRITION_LOGS)
       ) ?? [];
       const todayNutrition = nutritionLogs.filter((n) => isOnLocalDay(n.loggedAt, today));
-      const caloriesToday  = todayNutrition.reduce((s, n) => s + n.calories, 0);
-      const proteinToday   = todayNutrition.reduce((s, n) => s + n.proteinGrams, 0);
+      // Round the sums: per-entry macros are decimals, and float drift otherwise
+      // leaks into labels like "116.60000000000001g remaining"
+      const caloriesToday  = Math.round(todayNutrition.reduce((s, n) => s + n.calories, 0));
+      const proteinToday   = Math.round(todayNutrition.reduce((s, n) => s + n.proteinGrams, 0));
 
       // 3. Today's water logs
       const waterLogs = (

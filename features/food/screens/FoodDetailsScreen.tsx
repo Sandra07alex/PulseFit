@@ -85,11 +85,11 @@ export const FoodDetailsScreen: React.FC = () => {
     })();
   }, [params.foodId]);
 
-  // Recalculate nutrition whenever quantity or food changes
+  // Recalculate nutrition whenever quantity, unit or food changes
   useEffect(() => {
     if (!food) return;
-    setNutrition(calculateNutrition(food, quantity));
-  }, [food, quantity]);
+    setNutrition(calculateNutrition(food, quantity, unit));
+  }, [food, quantity, unit]);
 
   const handleSave = useCallback(async () => {
     if (!food || isSaving) return;

@@ -71,10 +71,17 @@ class FoodLogRepositoryImpl {
     return logs ?? [];
   }
 
-  private async saveLogs(logs: FoodLogEntry[]): Promise<void> {
-    await StorageService.setItem<FoodLogEntry[]>(StorageKeys.FOOD_LOGS, logs);
-    // Sync to legacy storage for Dashboard compatibility
-    await this.syncLegacyStorage(logs);
+  /**
+   * Atomically transform the stored logs (serialized per key, so concurrent
+   * saves can't drop entries) and mirror the result to legacy storage.
+   */
+  private updateLogs(fn: (logs: FoodLogEntry[]) => FoodLogEntry[]): Promise<FoodLogEntry[]> {
+    return StorageService.update<FoodLogEntry[]>(StorageKeys.FOOD_LOGS, async (logs) => {
+      const next = fn(logs ?? []);
+      // Sync to legacy storage for Dashboard compatibility
+      await this.syncLegacyStorage(next);
+      return next;
+    });
   }
 
   /** Keeps the old NUTRITION_LOGS key in sync for useDashboardData */
@@ -95,14 +102,12 @@ class FoodLogRepositoryImpl {
    * Create a new food log entry.
    */
   async create(entry: Omit<FoodLogEntry, 'id' | 'loggedAt'>): Promise<FoodLogEntry> {
-    const logs = await this.getAllLogs();
     const newEntry: FoodLogEntry = {
       ...entry,
       id:       generateId(),
       loggedAt: new Date().toISOString(),
     };
-    logs.push(newEntry);
-    await this.saveLogs(logs);
+    await this.updateLogs((logs) => [...logs, newEntry]);
     await StreakService.recordActivity(newEntry.loggedAt);
     await this.updateRecentFoods(entry.foodId);
     return newEntry;
@@ -116,24 +121,24 @@ class FoodLogRepositoryImpl {
     id: string,
     updates: Partial<Omit<FoodLogEntry, 'id' | 'loggedAt'>>
   ): Promise<FoodLogEntry | null> {
-    const logs  = await this.getAllLogs();
-    const index = logs.findIndex((log) => log.id === id);
-    if (index === -1) return null;
-
-    logs[index] = { ...logs[index], ...updates };
-    await this.saveLogs(logs);
-    return logs[index];
+    let updated: FoodLogEntry | null = null;
+    await this.updateLogs((logs) =>
+      logs.map((log) => (log.id === id ? (updated = { ...log, ...updates }) : log))
+    );
+    return updated;
   }
 
   /**
    * Delete a food log entry by ID.
    */
   async delete(id: string): Promise<boolean> {
-    const logs    = await this.getAllLogs();
-    const filtered = logs.filter((log) => log.id !== id);
-    if (filtered.length === logs.length) return false; // not found
-    await this.saveLogs(filtered);
-    return true;
+    let found = false;
+    await this.updateLogs((logs) => {
+      const filtered = logs.filter((log) => log.id !== id);
+      found = filtered.length !== logs.length;
+      return filtered;
+    });
+    return found;
   }
 
   // ---------------------------------------------------------------------------
@@ -208,11 +213,10 @@ class FoodLogRepositoryImpl {
    */
   async updateRecentFoods(foodId: string): Promise<void> {
     try {
-      const recent = await this.getRecentFoodIds();
       // Remove if already exists, then prepend
-      const filtered = recent.filter((id) => id !== foodId);
-      const updated  = [foodId, ...filtered].slice(0, 20);
-      await StorageService.setItem(StorageKeys.RECENT_FOOD_IDS, updated);
+      await StorageService.update<string[]>(StorageKeys.RECENT_FOOD_IDS, (recent) =>
+        [foodId, ...(recent ?? []).filter((id) => id !== foodId)].slice(0, 20)
+      );
     } catch (err) {
       console.warn('[FoodLogRepository] Failed to update recent foods:', err);
     }
@@ -222,8 +226,7 @@ class FoodLogRepositoryImpl {
    * Clear all logs (for testing/reset).
    */
   async clearAll(): Promise<void> {
-    await StorageService.setItem<FoodLogEntry[]>(StorageKeys.FOOD_LOGS, []);
-    await StorageService.setItem<NutritionEntry[]>(StorageKeys.NUTRITION_LOGS, []);
+    await this.updateLogs(() => []);
   }
 }
 

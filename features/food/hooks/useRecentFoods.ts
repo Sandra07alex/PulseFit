@@ -3,7 +3,8 @@
  * @description Hook for accessing recently-used foods (last 20, newest first).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { FoodLogRepository } from '../repository/FoodLogRepository';
 import { FoodCatalogRepository } from '../repository/FoodCatalogRepository';
 import type { FoodCatalogItem } from '../types/food.types';
@@ -38,9 +39,12 @@ export function useRecentFoods(): UseRecentFoodsResult {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Reload on focus so a food logged from the details screen shows up on return
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   return { recentFoods, isLoading, refresh: load };
 }

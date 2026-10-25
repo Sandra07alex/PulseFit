@@ -41,6 +41,10 @@ class WaterRepositoryImpl {
     await StorageService.setItem<WaterLog[]>(StorageKeys.WATER_LOGS, logs);
   }
 
+  private updateLogs(fn: (logs: WaterLog[]) => WaterLog[]): Promise<WaterLog[]> {
+    return StorageService.update<WaterLog[]>(StorageKeys.WATER_LOGS, (logs) => fn(logs ?? []));
+  }
+
   // ---------------------------------------------------------------------------
   // CRUD
   // ---------------------------------------------------------------------------
@@ -50,15 +54,13 @@ class WaterRepositoryImpl {
    * @param amountMl - Amount of water in millilitres
    */
   async create(amountMl: number): Promise<WaterLog> {
-    const logs = await this.getAllLogs();
     const entry: WaterLog = {
       id:       generateId(),
       userId:   'local',
       amountMl: Math.max(1, Math.round(amountMl)),
       loggedAt: new Date().toISOString(),
     };
-    logs.push(entry);
-    await this.saveLogs(logs);
+    await this.updateLogs((logs) => [...logs, entry]);
     await StreakService.recordActivity(entry.loggedAt);
     return entry;
   }
@@ -68,11 +70,13 @@ class WaterRepositoryImpl {
    * @returns true if deleted, false if not found
    */
   async delete(id: string): Promise<boolean> {
-    const logs     = await this.getAllLogs();
-    const filtered = logs.filter((log) => log.id !== id);
-    if (filtered.length === logs.length) return false;
-    await this.saveLogs(filtered);
-    return true;
+    let found = false;
+    await this.updateLogs((logs) => {
+      const filtered = logs.filter((log) => log.id !== id);
+      found = filtered.length !== logs.length;
+      return filtered;
+    });
+    return found;
   }
 
   // ---------------------------------------------------------------------------

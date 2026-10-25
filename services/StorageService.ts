@@ -5,6 +5,8 @@ import { StorageKey } from '../constants/StorageKeys';
  */
 class StorageServiceImpl {
   private memoryCache = new Map<string, string>();
+  /** Per-key tail of pending updates, so read-modify-write calls never interleave */
+  private queues = new Map<string, Promise<unknown>>();
 
   private getNativeStorage() {
     try {
@@ -45,6 +47,23 @@ class StorageServiceImpl {
     } catch (err) {
       console.warn(`[StorageService] Failed to set item ${key}`, err);
     }
+  }
+
+  /**
+   * Atomically read, transform and write a key. Calls for the same key run one at a time,
+   * so two quick taps can't both read the old list and drop each other's entry.
+   */
+  update<T>(key: StorageKey, fn: (current: T | null) => T | Promise<T>): Promise<T> {
+    const prev = this.queues.get(key) ?? Promise.resolve();
+    const next = prev
+      .catch(() => {})
+      .then(async () => {
+        const value = await fn(await this.getItem<T>(key));
+        await this.setItem<T>(key, value);
+        return value;
+      });
+    this.queues.set(key, next);
+    return next;
   }
 
   async removeItem(key: StorageKey): Promise<void> {

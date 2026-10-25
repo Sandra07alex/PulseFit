@@ -26,7 +26,6 @@ class WorkoutRepositoryImpl {
   }
 
   async create(data: Omit<Workout, 'id' | 'createdAt'> & { id?: string }): Promise<Workout> {
-    const all = await this.getAll();
     const now = new Date().toISOString();
     const newEntry: Workout = {
       id: data.id || `workout_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -40,8 +39,7 @@ class WorkoutRepositoryImpl {
       completedAt: data.completedAt || now,
       createdAt: now,
     };
-    const updated = [newEntry, ...all];
-    await StorageService.setItem(StorageKeys.WORKOUT_LOGS, updated);
+    await StorageService.update<Workout[]>(StorageKeys.WORKOUT_LOGS, (all) => [newEntry, ...(all ?? [])]);
     await StreakService.recordActivity(newEntry.completedAt);
     return newEntry;
   }
@@ -63,13 +61,13 @@ class WorkoutRepositoryImpl {
   }
 
   async delete(id: string): Promise<boolean> {
-    const all = await this.getAll();
-    const filtered = all.filter((item) => item.id !== id);
-    if (filtered.length !== all.length) {
-      await StorageService.setItem(StorageKeys.WORKOUT_LOGS, filtered);
-      return true;
-    }
-    return false;
+    let found = false;
+    await StorageService.update<Workout[]>(StorageKeys.WORKOUT_LOGS, (all) => {
+      const filtered = (all ?? []).filter((item) => item.id !== id);
+      found = filtered.length !== (all ?? []).length;
+      return filtered;
+    });
+    return found;
   }
 }
 
