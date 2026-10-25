@@ -64,14 +64,13 @@ export function useWater(): UseWaterReturn {
   );
 
   const addWater = useCallback(async (amountMl: number) => {
-    // Optimistic update
-    const newTotal = totalMl + Math.round(amountMl);
-    setTotalMl(newTotal);
+    // Optimistic update (functional, so rapid taps all count)
+    setTotalMl((prev) => prev + Math.round(amountMl));
 
     await WaterRepository.create(amountMl);
     // Reload to get the authoritative state including the new log entry
     await load();
-  }, [totalMl, load]);
+  }, [load]);
 
   const removeLog = useCallback(async (id: string) => {
     // Find entry to optimistically subtract

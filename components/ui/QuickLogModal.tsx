@@ -89,7 +89,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
         toast.showSuccess(`Logged ${name} (${calNum} kcal)`);
       } else if (type === 'water') {
         const ml = parseInt(waterAmount, 10) || 250;
-        await WaterRepository.create({ amount: ml });
+        await WaterRepository.create(ml);
         toast.showSuccess(`Added ${ml} ml Water`);
       } else if (type === 'workout') {
         const title = workoutTitle.trim() || 'General Workout';

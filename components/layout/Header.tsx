@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Companion } from '../mascot/Companion';
 import { CompanionId, CompanionMood } from '../mascot/types';

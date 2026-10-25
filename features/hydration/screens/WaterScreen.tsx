@@ -1,779 +1,314 @@
 /**
  * @file WaterScreen.tsx
- * @description Offline water tracking screen.
+ * @description Offline water tracking screen – clay 3D edition.
  *
  * Features:
- *  - Animated progress bar (Droppy blue, spring-driven)
- *  - Large intake / goal display
- *  - Quick-add buttons: +250, +500, +750, +1000 ml
- *  - Custom amount input (modal bottom sheet)
- *  - Today's log history with swipe/tap delete
- *  - Friendly empty state when no logs
- *
- * Design follows PulseFit design system exactly:
- *  - colors, spacing, radius, shadows, typography
- *  - Droppy companion (#00B4D8) as the accent throughout
- *  - usePressAnimation for all buttons
+ *  - 3D water jar that fills as you drink
+ *  - Quick-add tiles: 250 / 500 / 750 / 1000 ml
+ *  - Custom amount bottom sheet
+ *  - Today's log history with delete
+ *  - Sleepy Droppy empty state
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  Animated,
-  RefreshControl,
-  StatusBar,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { useWater }         from '../hooks/useWater';
-import { usePressAnimation } from '../../../hooks/useMotion';
-import { confirmAction }     from '../../../utils/confirm';
-
-import { colors }     from '../../../theme/colors';
-import { spacing }    from '../../../theme/spacing';
-import { radius }     from '../../../theme/radius';
-import { shadows }    from '../../../theme/shadows';
+  BounceIn,
+  ClayButton,
+  ClayCard,
+  ClayChip,
+  ClayIcon,
+  ClayInput,
+  ClayLabel,
+  ClayScreen,
+  ClaySectionHeader,
+  ClaySheet,
+  ClayTitle,
+} from '../../../components/clay';
+import { Companion } from '../../../components/mascot/Companion';
+import { WaterJar } from '../components/WaterJar';
+import { useWater } from '../hooks/useWater';
+import { useHaptics } from '../../../hooks/useHaptics';
+import { useToast } from '../../../hooks/useToast';
+import { confirmAction } from '../../../utils/confirm';
+import { shortTime } from '../../../utils/date';
+import { clayTints } from '../../../theme/clay';
 import { typography } from '../../../theme/typography';
 import type { WaterLog } from '../../../types/models';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
+const DROPPY = clayTints.droppy;
 
-const DROPPY  = colors.companions.droppy.primary;  // #00B4D8
-const DROPPY_SOFT = colors.companions.droppy.soft; // #E0F7FA
+const QUICK_AMOUNTS = [
+  { ml: 250, emoji: '🥛', label: 'Glass' },
+  { ml: 500, emoji: '🥤', label: 'Bottle' },
+  { ml: 750, emoji: '🍶', label: 'Big' },
+  { ml: 1000, emoji: '🫙', label: 'Jug' },
+] as const;
 
-const QUICK_AMOUNTS = [250, 500, 750, 1000] as const;
+const PRESETS = [100, 200, 350, 600];
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-/** Animated horizontal progress bar */
-const WaterProgressBar: React.FC<{ percentage: number }> = ({ percentage }) => {
-  const widthAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(widthAnim, {
-      toValue:         Math.min(percentage, 100),
-      tension:         80,
-      friction:        12,
-      useNativeDriver: false,
-    }).start();
-  }, [percentage]);
-
-  const width = widthAnim.interpolate({
-    inputRange:  [0, 100],
-    outputRange: ['0%', '100%'],
-  });
-
-  return (
-    <View style={barStyles.track}>
-      <Animated.View style={[barStyles.fill, { width }]} />
-      {/* Wave shimmer overlay */}
-      <View style={barStyles.shimmer} pointerEvents="none" />
-    </View>
-  );
-};
-
-const barStyles = StyleSheet.create({
-  track: {
-    height:          20,
-    backgroundColor: DROPPY_SOFT,
-    borderRadius:    radius.pill,
-    overflow:        'hidden',
-    position:        'relative',
-  },
-  fill: {
-    position:        'absolute',
-    top: 0, left: 0, bottom: 0,
-    backgroundColor: DROPPY,
-    borderRadius:    radius.pill,
-  },
-  shimmer: {
-    position:        'absolute',
-    top:             3,
-    left:            0,
-    right:           0,
-    height:          6,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius:    radius.pill,
-  },
-});
+const fmt = (ml: number) => (ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`);
 
 // ---------------------------------------------------------------------------
-// Quick-add button
+// Custom amount sheet
 // ---------------------------------------------------------------------------
 
-const QuickAddButton: React.FC<{
-  amount:  number;
-  onPress: (amount: number) => void;
-}> = ({ amount, onPress }) => {
-  const { scale, handlePressIn, handlePressOut } = usePressAnimation(0.92);
-  const label = amount >= 1000 ? `${amount / 1000}L` : `${amount}`;
-
-  return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <TouchableOpacity
-        style={qaStyles.btn}
-        onPress={() => onPress(amount)}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={1}
-        accessibilityRole="button"
-        accessibilityLabel={`Add ${amount} millilitres`}
-      >
-        <Text style={qaStyles.plus}>+</Text>
-        <Text style={qaStyles.label}>{label}</Text>
-        <Text style={qaStyles.unit}>ml</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-};
-
-const qaStyles = StyleSheet.create({
-  btn: {
-    backgroundColor: DROPPY_SOFT,
-    borderRadius:    radius.card,
-    paddingVertical:  spacing.lg,
-    paddingHorizontal: spacing.md,
-    alignItems:      'center',
-    borderWidth:     1.5,
-    borderColor:     colors.companions.droppy.light,
-    minWidth:        72,
-    gap:             2,
-  },
-  plus: {
-    fontSize:   typography.sizes.base,
-    fontWeight: '700',
-    color:      DROPPY,
-  },
-  label: {
-    fontSize:   typography.sizes['2xl'],
-    fontWeight: '900',
-    color:      DROPPY,
-    letterSpacing: -0.5,
-  },
-  unit: {
-    fontSize:   typography.sizes.xs,
-    fontWeight: '600',
-    color:      colors.lightMode.textSecondary,
-  },
-});
-
-// ---------------------------------------------------------------------------
-// Log history item
-// ---------------------------------------------------------------------------
-
-const LogItem: React.FC<{
-  log:      WaterLog;
-  onDelete: (id: string) => void;
-}> = ({ log, onDelete }) => {
-  const time = new Date(log.loggedAt).toLocaleTimeString([], {
-    hour: '2-digit', minute: '2-digit',
-  });
-  const label = log.amountMl >= 1000
-    ? `${(log.amountMl / 1000).toFixed(1)} L`
-    : `${log.amountMl} ml`;
-
-  return (
-    <View style={logStyles.row}>
-      <View style={logStyles.iconWrap}>
-        <Text style={logStyles.icon}>💧</Text>
-      </View>
-      <View style={logStyles.info}>
-        <Text style={logStyles.amount}>{label}</Text>
-        <Text style={logStyles.time}>{time}</Text>
-      </View>
-      <TouchableOpacity
-        onPress={() => onDelete(log.id)}
-        style={logStyles.deleteBtn}
-        accessibilityRole="button"
-        accessibilityLabel={`Delete ${label} log`}
-        hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-      >
-        <Text style={logStyles.deleteIcon}>🗑️</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const logStyles = StyleSheet.create({
-  row: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    backgroundColor: colors.lightMode.surface,
-    borderRadius:    radius.cardSmall,
-    padding:         spacing.lg,
-    gap:             spacing.md,
-    ...shadows.sm,
-  },
-  iconWrap: {
-    width:           40,
-    height:          40,
-    borderRadius:    radius.md,
-    backgroundColor: DROPPY_SOFT,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  icon: { fontSize: 20 },
-  info: { flex: 1 },
-  amount: {
-    fontSize:   typography.sizes.lg,
-    fontWeight: '700',
-    color:      colors.lightMode.text,
-  },
-  time: {
-    fontSize:  typography.sizes.sm,
-    fontWeight: '500',
-    color:     colors.lightMode.textSecondary,
-    marginTop: 2,
-  },
-  deleteBtn: { padding: 4 },
-  deleteIcon: { fontSize: 18 },
-});
-
-// ---------------------------------------------------------------------------
-// Custom amount modal
-// ---------------------------------------------------------------------------
-
-const CustomAmountModal: React.FC<{
-  visible:   boolean;
-  onClose:   () => void;
-  onConfirm: (amount: number) => void;
+const CustomAmountSheet: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: (ml: number) => Promise<void>;
 }> = ({ visible, onClose, onConfirm }) => {
   const [input, setInput] = useState('');
-  const slideAnim = useRef(new Animated.Value(300)).current;
-  const opacAnim  = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      setInput('');
-      Animated.parallel([
-        Animated.timing(opacAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.spring(slideAnim, { toValue: 0, tension: 120, friction: 14, useNativeDriver: true }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(opacAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 300, duration: 200, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible]);
-
-  const handleConfirm = () => {
-    const value = parseInt(input, 10);
-    if (!value || value < 1 || value > 5000) {
-      Alert.alert('Invalid amount', 'Please enter a value between 1 and 5000 ml.');
-      return;
-    }
-    onConfirm(value);
-    onClose();
-  };
+  const value = parseInt(input, 10) || 0;
+  const valid = value >= 1 && value <= 5000;
 
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <Animated.View style={[modalStyles.overlay, { opacity: opacAnim }]}>
-          <TouchableWithoutFeedback>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'position' : undefined}>
-              <Animated.View style={[modalStyles.sheet, { transform: [{ translateY: slideAnim }] }]}>
-                <View style={modalStyles.handle} />
-                <Text style={modalStyles.title}>Custom Amount</Text>
-                <Text style={modalStyles.subtitle}>How much water did you drink?</Text>
-
-                <View style={modalStyles.inputRow}>
-                  <TextInput
-                    style={modalStyles.input}
-                    value={input}
-                    onChangeText={setInput}
-                    keyboardType="number-pad"
-                    placeholder="e.g. 350"
-                    placeholderTextColor={colors.lightMode.textTertiary}
-                    autoFocus
-                    maxLength={4}
-                    accessibilityLabel="Custom water amount"
-                  />
-                  <Text style={modalStyles.inputUnit}>ml</Text>
-                </View>
-
-                {/* Preset shortcuts inside modal */}
-                <View style={modalStyles.presets}>
-                  {[100, 200, 350, 600].map((v) => (
-                    <TouchableOpacity
-                      key={v}
-                      style={modalStyles.preset}
-                      onPress={() => setInput(String(v))}
-                      accessibilityLabel={`Set ${v} ml`}
-                    >
-                      <Text style={modalStyles.presetText}>{v}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <TouchableOpacity style={modalStyles.confirmBtn} onPress={handleConfirm} activeOpacity={0.85}>
-                  <Text style={modalStyles.confirmText}>Add Water 💧</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            </KeyboardAvoidingView>
-          </TouchableWithoutFeedback>
-        </Animated.View>
-      </TouchableWithoutFeedback>
-    </Modal>
+    <ClaySheet
+      visible={visible}
+      onClose={() => {
+        setInput('');
+        onClose();
+      }}
+      title="Custom amount"
+      emoji="💧"
+    >
+      <ClayInput
+        big
+        tint="droppy"
+        value={input}
+        onChangeText={(v) => setInput(v.replace(/[^0-9]/g, ''))}
+        keyboardType="number-pad"
+        placeholder="350"
+        maxLength={4}
+        suffix="ml"
+        autoFocus
+        accessibilityLabel="Custom water amount in millilitres"
+      />
+      <View style={styles.presets}>
+        {PRESETS.map((v) => (
+          <ClayChip key={v} label={`${v} ml`} tint="droppy" selected={value === v} onPress={() => setInput(String(v))} />
+        ))}
+      </View>
+      {input !== '' && !valid ? (
+        <ClayLabel style={{ textAlign: 'center', color: clayTints.blaze.accent }}>
+          Pick something between 1 and 5000 ml
+        </ClayLabel>
+      ) : null}
+      <ClayButton
+        label="Add water"
+        icon="💧"
+        tint="droppy"
+        size="lg"
+        fullWidth
+        disabled={!valid}
+        onPress={async () => {
+          await onConfirm(value);
+          setInput('');
+          onClose();
+        }}
+      />
+    </ClaySheet>
   );
 };
 
-const modalStyles = StyleSheet.create({
-  overlay: {
-    flex:            1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent:  'flex-end',
-  },
-  sheet: {
-    backgroundColor:   colors.lightMode.surface,
-    borderTopLeftRadius:  radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    padding:           spacing['3xl'],
-    paddingBottom:     spacing['5xl'],
-    gap:               spacing.lg,
-    ...shadows['2xl'],
-  },
-  handle: {
-    width:           40,
-    height:          4,
-    borderRadius:    radius.pill,
-    backgroundColor: colors.gray300,
-    alignSelf:       'center',
-    marginBottom:    spacing.sm,
-  },
-  title: {
-    fontSize:    typography.sizes['3xl'],
-    fontWeight:  '800',
-    color:       colors.lightMode.text,
-    textAlign:   'center',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize:  typography.sizes.base,
-    fontWeight: '500',
-    color:     colors.lightMode.textSecondary,
-    textAlign: 'center',
-  },
-  inputRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    backgroundColor: colors.lightMode.surfaceSubtle,
-    borderRadius:   radius.input,
-    borderWidth:    2,
-    borderColor:    DROPPY,
-    paddingHorizontal: spacing.xl,
-    paddingVertical:   spacing.md,
-    gap:            spacing.md,
-  },
-  input: {
-    flex:       1,
-    fontSize:   typography.sizes['5xl'],
-    fontWeight: '900',
-    color:      DROPPY,
-    letterSpacing: -1,
-    textAlign:  'center',
-    padding:    0,
-  },
-  inputUnit: {
-    fontSize:  typography.sizes.xl,
-    fontWeight: '700',
-    color:     colors.lightMode.textSecondary,
-  },
-  presets: {
-    flexDirection: 'row',
-    gap:           spacing.sm,
-    justifyContent: 'center',
-  },
-  preset: {
-    backgroundColor:   DROPPY_SOFT,
-    borderRadius:      radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical:   spacing.sm,
-    borderWidth:       1,
-    borderColor:       colors.companions.droppy.light,
-  },
-  presetText: {
-    fontSize:  typography.sizes.sm,
-    fontWeight: '700',
-    color:     DROPPY,
-  },
-  confirmBtn: {
-    backgroundColor: DROPPY,
-    borderRadius:    radius.pill,
-    height:          spacing.buttonHeight + 8,
-    alignItems:      'center',
-    justifyContent:  'center',
-    ...shadows.button,
-    marginTop:       spacing.sm,
-  },
-  confirmText: {
-    fontSize:   typography.sizes.lg,
-    fontWeight: '800',
-    color:      colors.white,
-    letterSpacing: -0.3,
-  },
-});
+// ---------------------------------------------------------------------------
+// Log row
+// ---------------------------------------------------------------------------
+
+const LogRow: React.FC<{ log: WaterLog; onDelete: () => void }> = ({ log, onDelete }) => (
+  <ClayCard tint="cloud" depth="sm" radius={22} padding={12} glow="soft" contentStyle={styles.row}>
+    <ClayIcon emoji="💧" tint="droppy" size={40} />
+    <View style={{ flex: 1 }}>
+      <ClayTitle size={17} color={DROPPY.accent}>{fmt(log.amountMl)}</ClayTitle>
+      <ClayLabel>{shortTime(log.loggedAt)}</ClayLabel>
+    </View>
+    <Pressable onPress={onDelete} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Delete ${fmt(log.amountMl)} log`}>
+      <Text style={styles.trash}>🗑️</Text>
+    </Pressable>
+  </ClayCard>
+);
 
 // ---------------------------------------------------------------------------
-// Main Screen
+// Screen
 // ---------------------------------------------------------------------------
 
 export function WaterScreen() {
-  const insets = useSafeAreaInsets();
-  const {
-    logs,
-    totalMl,
-    goalMl,
-    remainingMl,
-    percentage,
-    isLoading,
-    addWater,
-    removeLog,
-    refresh,
-  } = useWater();
+  const haptics = useHaptics();
+  const toast = useToast();
+  const { logs, totalMl, goalMl, remainingMl, percentage, isLoading, addWater, removeLog, refresh } = useWater();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const [customModalOpen, setCustomModalOpen] = useState(false);
-  const [isRefreshing,    setIsRefreshing]    = useState(false);
+  const done = remainingMl === 0 && totalMl > 0;
 
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await refresh();
-    setIsRefreshing(false);
-  }, [refresh]);
+  const handleAdd = useCallback(
+    async (ml: number) => {
+      haptics.light();
+      await addWater(ml);
+      if (totalMl < goalMl && totalMl + ml >= goalMl) {
+        haptics.success();
+        toast.showSuccess('Goal reached! Droppy is doing a happy splash 🎉', 'droppy');
+      }
+    },
+    [addWater, haptics, toast, totalMl, goalMl]
+  );
 
-  const handleAdd = useCallback(async (amount: number) => {
-    await addWater(amount);
-  }, [addWater]);
-
-  const handleDelete = useCallback(async (id: string) => {
-    // confirmAction falls back to window.confirm on web, where Alert buttons do nothing
-    if (await confirmAction('Delete Log', 'Remove this water entry?')) {
-      await removeLog(id);
-    }
-  }, [removeLog]);
-
-  // Format display values
-  const totalDisplay = totalMl >= 1000
-    ? `${(totalMl / 1000).toFixed(1)}L`
-    : `${totalMl}ml`;
-  const goalDisplay = goalMl >= 1000
-    ? `${(goalMl / 1000).toFixed(1)}L`
-    : `${goalMl}ml`;
-  const remainDisplay = remainingMl >= 1000
-    ? `${(remainingMl / 1000).toFixed(1)}L`
-    : `${remainingMl}ml`;
+  const handleDelete = useCallback(
+    async (id: string) => {
+      // confirmAction falls back to window.confirm on web, where Alert buttons do nothing
+      if (await confirmAction('Delete Log', 'Remove this water entry?')) {
+        await removeLog(id);
+      }
+    },
+    [removeLog]
+  );
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.lightMode.background} />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: Math.max(insets.bottom + 120, 140) },
-        ]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={DROPPY}
-            colors={[DROPPY]}
-          />
-        }
-      >
-        {/* ── Page Header ───────────────────────────────── */}
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>💧 Hydration</Text>
-          <Text style={styles.pageSubtitle}>Stay hydrated, stay sharp</Text>
-        </View>
-
-        {/* ── Hero Card ─────────────────────────────────── */}
-        <View style={styles.heroCard}>
-          {/* Droppy mascot row */}
-          <View style={styles.heroTopRow}>
-            <View>
-              <Text style={styles.heroLabel}>Today's Intake</Text>
-              <View style={styles.heroAmountRow}>
-                <Text style={styles.heroAmount}>{totalDisplay}</Text>
-                <Text style={styles.heroGoal}> / {goalDisplay}</Text>
-              </View>
-            </View>
-            <View style={styles.droppyBadge}>
-              <Text style={styles.droppyEmoji}>🐬</Text>
-              <Text style={styles.droppyPct}>{percentage}%</Text>
-            </View>
-          </View>
-
-          {/* Progress bar */}
-          <WaterProgressBar percentage={percentage} />
-
-          {/* Remaining row */}
-          <View style={styles.heroBottomRow}>
-            <View style={styles.statPill}>
-              <Text style={styles.statPillLabel}>Consumed</Text>
-              <Text style={styles.statPillValue}>{totalDisplay}</Text>
-            </View>
-            <View style={[styles.statPill, styles.statPillAccent]}>
-              <Text style={styles.statPillLabel}>Remaining</Text>
-              <Text style={[styles.statPillValue, { color: DROPPY }]}>
-                {remainingMl === 0 ? '🎉 Done!' : remainDisplay}
+    <ClayScreen
+      title="Hydration"
+      subtitle={done ? 'Fully charged! 💙' : 'Stay hydrated, stay sharp'}
+      companionId="droppy"
+      companionMood={done ? 'celebrate' : percentage >= 50 ? 'wave' : 'idle'}
+      refreshing={isLoading}
+      onRefresh={refresh}
+      overlay={<CustomAmountSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onConfirm={handleAdd} />}
+    >
+      {/* Hero */}
+      <BounceIn>
+        <ClayCard tint="cloud" depth="lg" radius={32} padding={20} glow="strong" contentStyle={styles.hero}>
+          <WaterJar percentage={percentage} />
+          <View style={styles.heroStats}>
+            <ClayLabel>Today's intake</ClayLabel>
+            <ClayTitle size={38} color={DROPPY.accent}>{fmt(totalMl)}</ClayTitle>
+            <ClayLabel style={{ marginTop: -4 }}>of {fmt(goalMl)} goal</ClayLabel>
+            <ClayCard tint={done ? 'brocco' : 'droppy'} depth="sm" radius={18} padding={10} glow="soft" style={{ marginTop: 12 }}>
+              <Text style={styles.pillValue}>{done ? '🎉 Done!' : `${fmt(remainingMl)} to go`}</Text>
+              <Text style={styles.pillLabel}>
+                {percentage}% · {Math.floor(totalMl / 250)} glasses
               </Text>
-            </View>
-            <View style={styles.statPill}>
-              <Text style={styles.statPillLabel}>Goal</Text>
-              <Text style={styles.statPillValue}>{goalDisplay}</Text>
-            </View>
+            </ClayCard>
           </View>
-        </View>
+        </ClayCard>
+      </BounceIn>
 
-        {/* ── Quick Add ─────────────────────────────────── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Add</Text>
-          <View style={styles.quickGrid}>
-            {QUICK_AMOUNTS.map((amount) => (
-              <QuickAddButton key={amount} amount={amount} onPress={handleAdd} />
+      {/* Quick add */}
+      <BounceIn delay={80}>
+        <ClaySectionHeader title="Quick add" subtitle="Tap to pour 💧" />
+        <View style={styles.grid}>
+          {QUICK_AMOUNTS.map((q) => (
+            <ClayCard
+              key={q.ml}
+              tint="droppy"
+              depth="md"
+              radius={22}
+              padding={0}
+              glow="soft"
+              onPress={() => handleAdd(q.ml)}
+              accessibilityLabel={`Add ${q.ml} millilitres`}
+              style={styles.tile}
+              contentStyle={styles.tileFace}
+            >
+              <Text style={styles.tileEmoji}>{q.emoji}</Text>
+              <Text style={styles.tileAmount}>{fmt(q.ml)}</Text>
+              <Text style={styles.tileLabel}>{q.label}</Text>
+            </ClayCard>
+          ))}
+        </View>
+        <ClayButton
+          label="Custom amount"
+          icon="✏️"
+          tint="cloud"
+          fullWidth
+          style={{ marginTop: 14 }}
+          labelStyle={{ color: DROPPY.accent }}
+          onPress={() => setSheetOpen(true)}
+        />
+      </BounceIn>
+
+      {/* Log */}
+      <BounceIn delay={140}>
+        <ClaySectionHeader
+          title="Today's log"
+          subtitle={logs.length ? `${logs.length} entr${logs.length === 1 ? 'y' : 'ies'}` : undefined}
+        />
+        {logs.length === 0 ? (
+          <ClayCard tint="cloud" depth="md" radius={28} padding={24} contentStyle={styles.empty}>
+            <Companion id="droppy" mood="sleep" size={84} />
+            <ClayTitle size={18}>No water logged yet</ClayTitle>
+            <ClayLabel style={{ textAlign: 'center' }}>Tap a glass above to wake Droppy up!</ClayLabel>
+          </ClayCard>
+        ) : (
+          <View style={{ gap: 10 }}>
+            {logs.map((log) => (
+              <LogRow key={log.id} log={log} onDelete={() => handleDelete(log.id)} />
             ))}
           </View>
-          <TouchableOpacity
-            style={styles.customBtn}
-            onPress={() => setCustomModalOpen(true)}
-            activeOpacity={0.82}
-            accessibilityRole="button"
-            accessibilityLabel="Add custom water amount"
-          >
-            <Text style={styles.customBtnIcon}>✏️</Text>
-            <Text style={styles.customBtnText}>Custom Amount</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Today's Log ───────────────────────────────── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Today's Log
-            {logs.length > 0 && (
-              <Text style={styles.logCount}> · {logs.length} entr{logs.length === 1 ? 'y' : 'ies'}</Text>
-            )}
-          </Text>
-
-          {logs.length === 0 ? (
-            /* Empty state */
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🏜️</Text>
-              <Text style={styles.emptyTitle}>No water logged yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Tap a quick-add button above to log your first sip today!
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.logList}>
-              {logs.map((log) => (
-                <LogItem key={log.id} log={log} onDelete={handleDelete} />
-              ))}
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      {/* ── Custom Amount Modal ───────────────────────── */}
-      <CustomAmountModal
-        visible={customModalOpen}
-        onClose={() => setCustomModalOpen(false)}
-        onConfirm={handleAdd}
-      />
-    </View>
+        )}
+      </BounceIn>
+    </ClayScreen>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
 const styles = StyleSheet.create({
-  root: {
-    flex:            1,
-    backgroundColor: colors.lightMode.background,
-  },
-  scroll: { flex: 1 },
-  content: {
-    padding: spacing.screenPadding,
-    gap:     spacing['3xl'],
-  },
-
-  // Page header
-  pageHeader: { gap: 4 },
-  pageTitle: {
-    fontSize:    typography.sizes['4xl'],
-    fontWeight:  '900',
-    color:       colors.lightMode.text,
-    letterSpacing: -1,
-  },
-  pageSubtitle: {
-    fontSize:  typography.sizes.base,
-    fontWeight: '500',
-    color:     colors.lightMode.textSecondary,
-  },
-
-  // Hero card
-  heroCard: {
-    backgroundColor: colors.lightMode.surface,
-    borderRadius:    radius.heroCard,
-    padding:         spacing['3xl'],
-    gap:             spacing.xl,
-    ...shadows.card,
-    borderTopWidth:  4,
-    borderTopColor:  DROPPY,
-  },
-  heroTopRow: {
-    flexDirection:   'row',
-    justifyContent:  'space-between',
-    alignItems:      'flex-start',
-  },
-  heroLabel: {
-    fontSize:  typography.sizes.sm,
-    fontWeight: '700',
-    color:     colors.lightMode.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  heroAmountRow: {
+  hero: {
     flexDirection: 'row',
-    alignItems:    'baseline',
-    marginTop:     spacing.xs,
+    alignItems: 'center',
+    gap: 18,
   },
-  heroAmount: {
-    fontSize:    typography.sizes['5xl'],
-    fontWeight:  '900',
-    color:       DROPPY,
-    letterSpacing: -1.5,
+  heroStats: {
+    flex: 1,
   },
-  heroGoal: {
-    fontSize:  typography.sizes.xl,
-    fontWeight: '600',
-    color:     colors.lightMode.textSecondary,
+  pillValue: {
+    fontFamily: typography.fonts.display,
+    fontSize: 17,
+    color: '#FFFFFF',
   },
-  droppyBadge: {
-    alignItems:      'center',
-    backgroundColor: DROPPY_SOFT,
-    borderRadius:    radius.card,
-    padding:         spacing.md,
-    minWidth:        64,
+  pillLabel: {
+    fontFamily: typography.fonts.displayMedium,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.92)',
   },
-  droppyEmoji: { fontSize: 28 },
-  droppyPct: {
-    fontSize:   typography.sizes.base,
-    fontWeight: '800',
-    color:      DROPPY,
-    marginTop:  4,
-  },
-  heroBottomRow: {
+  grid: {
     flexDirection: 'row',
-    gap:           spacing.sm,
+    gap: 10,
   },
-  statPill: {
-    flex:            1,
-    backgroundColor: colors.lightMode.surfaceSubtle,
-    borderRadius:    radius.cardSmall,
-    padding:         spacing.md,
-    alignItems:      'center',
-    gap:             2,
+  tile: {
+    flex: 1,
   },
-  statPillAccent: {
-    backgroundColor: DROPPY_SOFT,
-    borderWidth:     1,
-    borderColor:     colors.companions.droppy.light,
+  tileFace: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 2,
   },
-  statPillLabel: {
-    fontSize:  typography.sizes.xs,
-    fontWeight: '600',
-    color:     colors.lightMode.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+  tileEmoji: {
+    fontSize: 26,
   },
-  statPillValue: {
-    fontSize:   typography.sizes.base,
-    fontWeight: '800',
-    color:      colors.lightMode.text,
-    letterSpacing: -0.2,
+  tileAmount: {
+    fontFamily: typography.fonts.display,
+    fontSize: 16,
+    color: '#FFFFFF',
   },
-
-  // Section
-  section: { gap: spacing.lg },
-  sectionTitle: {
-    fontSize:    typography.sizes.xl,
-    fontWeight:  '700',
-    color:       colors.lightMode.text,
-    letterSpacing: -0.3,
+  tileLabel: {
+    fontFamily: typography.fonts.displayMedium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.9)',
   },
-  logCount: {
-    fontSize:  typography.sizes.base,
-    fontWeight: '500',
-    color:     colors.lightMode.textSecondary,
-  },
-
-  // Quick add grid
-  quickGrid: {
+  presets: {
     flexDirection: 'row',
-    gap:           spacing.sm,
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
   },
-  customBtn: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'center',
-    gap:             spacing.sm,
-    backgroundColor: colors.lightMode.surface,
-    borderRadius:    radius.button,
-    paddingVertical: spacing.md,
-    borderWidth:     1.5,
-    borderColor:     colors.lightMode.border,
-    ...shadows.sm,
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  customBtnIcon: { fontSize: 18 },
-  customBtnText: {
-    fontSize:   typography.sizes.base,
-    fontWeight: '700',
-    color:      colors.lightMode.textSecondary,
+  trash: {
+    fontSize: 18,
+    padding: 4,
   },
-
-  // Log list
-  logList: { gap: spacing.sm },
-
-  // Empty state
-  emptyState: {
-    alignItems:      'center',
-    paddingVertical: spacing['5xl'],
-    gap:             spacing.md,
-  },
-  emptyEmoji: { fontSize: 56 },
-  emptyTitle: {
-    fontSize:    typography.sizes.xl,
-    fontWeight:  '700',
-    color:       colors.lightMode.text,
-    letterSpacing: -0.3,
-  },
-  emptySubtitle: {
-    fontSize:  typography.sizes.base,
-    fontWeight: '500',
-    color:     colors.lightMode.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: spacing.xl,
+  empty: {
+    alignItems: 'center',
+    gap: 8,
   },
 });
