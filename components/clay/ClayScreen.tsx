@@ -20,14 +20,15 @@ export interface ClayScreenProps {
   children: React.ReactNode;
   refreshing?: boolean;
   onRefresh?: () => void;
-  bubbles?: boolean;
+  /** Show the background polka dots */
+  pattern?: boolean;
   /** Leave room at the bottom for the floating island nav */
   withNav?: boolean;
   /** Content rendered above the scroll view (sheets, FABs) */
   overlay?: React.ReactNode;
 }
 
-/** Standard PulseFit screen: pastel backdrop, mascot header, scrolling clay content */
+/** Standard PulseFit screen: cream backdrop, mascot header, scrolling clay content */
 export const ClayScreen: React.FC<ClayScreenProps> = ({
   title,
   subtitle,
@@ -38,7 +39,7 @@ export const ClayScreen: React.FC<ClayScreenProps> = ({
   children,
   refreshing = false,
   onRefresh,
-  bubbles = true,
+  pattern = true,
   withNav = true,
   overlay,
 }) => {
@@ -46,7 +47,7 @@ export const ClayScreen: React.FC<ClayScreenProps> = ({
   const accent = clayTints[companionId ?? 'pulse'].accent;
 
   return (
-    <ClayBackground bubbles={bubbles}>
+    <ClayBackground pattern={pattern}>
       <StatusBar style="dark" />
       <ScrollView
         showsVerticalScrollIndicator={false}

@@ -89,9 +89,9 @@ export const clayTints: Record<ClayTint, ClayTintTokens> = {
     accent: '#F2679F',
   },
   cloud: {
-    face: ['#FFFFFF', '#F5F1FF'],
-    lip: '#DED5F7',
-    glow: '#9C8CE0',
+    face: ['#FFFFFF', '#FFFBF6'],
+    lip: '#EEE2D4',
+    glow: '#BFA184',
     soft: '#FFFFFF',
     ink: '#2E2350',
     accent: '#7B66FF',
@@ -99,11 +99,15 @@ export const clayTints: Record<ClayTint, ClayTintTokens> = {
 };
 
 export const clay = {
-  /** Full-screen pastel backdrop gradient (top → bottom) */
-  background: ['#F3F0FF', '#FAF9FF', '#EFEBFF'] as const,
+  /** Full-screen cozy cream backdrop gradient (top → bottom) */
+  background: ['#FFFAF3', '#FFF6EC', '#FDF1E6'] as const,
 
-  /** Floating decorative bubbles drawn behind content */
-  bubbles: ['#D8CFFF', '#E4DEFF', '#CDC2FF', '#E9E4FF', '#DAD2FF'] as const,
+  /** Faint polka dots printed on the cream backdrop */
+  dots: {
+    color: '#E9D9C6',
+    spacing: 24,
+    radius: 1.8,
+  },
 
   ink: {
     primary: '#2E2350',

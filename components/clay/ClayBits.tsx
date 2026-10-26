@@ -247,7 +247,7 @@ const bits = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F4FF',
+    backgroundColor: '#FFF8F0',
     borderRadius: 18,
     borderWidth: 2,
     paddingHorizontal: 16,
@@ -290,14 +290,14 @@ const bits = StyleSheet.create({
     paddingTop: 10,
     gap: 16,
     borderTopWidth: 6,
-    borderColor: '#EEE9FF',
+    borderColor: '#F6EDE2',
   },
   handle: {
     alignSelf: 'center',
     width: 44,
     height: 5,
     borderRadius: 999,
-    backgroundColor: '#E3DCFA',
+    backgroundColor: '#E9DCCD',
   },
   sheetTitleRow: {
     flexDirection: 'row',

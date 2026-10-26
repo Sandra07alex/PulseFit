@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   targetDivider: {
     borderBottomWidth: 1.5,
-    borderBottomColor: '#F1ECFF',
+    borderBottomColor: '#F6EDE2',
   },
   editForm: {
     maxHeight: 420,

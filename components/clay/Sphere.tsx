@@ -8,7 +8,7 @@ export interface SphereProps {
   opacity?: number;
 }
 
-/** Glossy 3D ball – used for background bubbles and decorations */
+/** Glossy 3D ball – used for decorations (streak dots, jar bubbles) */
 export const Sphere: React.FC<SphereProps> = ({ size, color, opacity = 1 }) => {
   const id = `sph${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
