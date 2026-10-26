@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pulsefit.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +20,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.pulsefit.app",
+      "versionCode": 1
     },
     "web": {
       "output": "static",
@@ -33,7 +36,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFAF3",
+          "backgroundColor": "#FFF8F0",
           "dark": {
             "backgroundColor": "#1E1A33"
           }

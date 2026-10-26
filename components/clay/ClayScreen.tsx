@@ -20,8 +20,6 @@ export interface ClayScreenProps {
   children: React.ReactNode;
   refreshing?: boolean;
   onRefresh?: () => void;
-  /** Show the background polka dots */
-  pattern?: boolean;
   /** Leave room at the bottom for the floating island nav */
   withNav?: boolean;
   /** Content rendered above the scroll view (sheets, FABs) */
@@ -39,7 +37,6 @@ export const ClayScreen: React.FC<ClayScreenProps> = ({
   children,
   refreshing = false,
   onRefresh,
-  pattern = true,
   withNav = true,
   overlay,
 }) => {
@@ -47,7 +44,7 @@ export const ClayScreen: React.FC<ClayScreenProps> = ({
   const accent = clayTints[companionId ?? 'pulse'].accent;
 
   return (
-    <ClayBackground pattern={pattern}>
+    <ClayBackground>
       <StatusBar style="dark" />
       <ScrollView
         showsVerticalScrollIndicator={false}
