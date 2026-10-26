@@ -193,7 +193,7 @@ export default function ProfileScreen() {
                     key={a.value}
                     label={a.label}
                     emoji={a.emoji}
-                    tint="brocco"
+                    tint="pulse"
                     selected={editActivity === a.value}
                     onPress={() => setEditActivity(a.value)}
                   />
@@ -268,9 +268,9 @@ export default function ProfileScreen() {
         <View style={styles.bioGrid}>
           {bio.map((b) => (
             <ClayCard key={b.label} tint="cloud" depth="md" radius={24} padding={14} style={styles.bioTile} contentStyle={styles.bioFace}>
-              <ClayIcon emoji={b.emoji} tint={b.tint} size={40} />
+              <ClayIcon emoji={b.emoji} tint="cloud" size={40} />
               <ClayLabel>{b.label}</ClayLabel>
-              <ClayTitle size={19} color={clayTints[b.tint].accent}>{b.value}</ClayTitle>
+              <ClayTitle size={19}>{b.value}</ClayTitle>
             </ClayCard>
           ))}
         </View>
@@ -282,9 +282,9 @@ export default function ProfileScreen() {
         <ClayCard tint="cloud" depth="md" radius={28} padding={8}>
           {targets.map((t, i) => (
             <View key={t.label} style={[styles.targetRow, i < targets.length - 1 && styles.targetDivider]}>
-              <ClayIcon emoji={t.emoji} tint={t.tint} size={36} />
+              <ClayIcon emoji={t.emoji} tint="cloud" size={36} />
               <ClayLabel style={{ flex: 1, fontSize: 14, color: clay.ink.primary }}>{t.label}</ClayLabel>
-              <ClayTitle size={17} color={clayTints[t.tint].accent}>{t.value}</ClayTitle>
+              <ClayTitle size={17} color={clayTints.pulse.accent}>{t.value}</ClayTitle>
             </View>
           ))}
         </ClayCard>

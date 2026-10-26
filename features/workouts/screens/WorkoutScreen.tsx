@@ -19,7 +19,7 @@ import {
   ClayTitle,
 } from '../../../components/clay';
 import { Companion } from '../../../components/mascot/Companion';
-import { clayTints } from '../../../theme/clay';
+import { clay, clayTints } from '../../../theme/clay';
 import { typography } from '../../../theme/typography';
 import { useToast } from '../../../hooks/useToast';
 import { useHaptics } from '../../../hooks/useHaptics';
@@ -34,7 +34,7 @@ const SessionRow: React.FC<{ workout: Workout; onDelete: () => void }> = ({ work
   const preset = presetForCategory(workout.category);
   return (
     <ClayCard tint="cloud" depth="sm" radius={22} padding={12} glow="soft" contentStyle={styles.row}>
-      <ClayIcon emoji={preset.emoji} tint={preset.tint} size={44} />
+      <ClayIcon emoji={preset.emoji} tint="cloud" size={44} />
       <View style={{ flex: 1 }}>
         <ClayTitle size={16}>{workout.title}</ClayTitle>
         <ClayLabel>
@@ -110,13 +110,13 @@ export function WorkoutScreen() {
             <ClayLabel style={{ marginTop: -4 }}>/ {WORKOUT_GOAL_MINUTES} min</ClayLabel>
           </ClayRing>
           <View style={styles.heroStats}>
-            <ClayCard tint="blaze" depth="sm" radius={20} padding={12} glow="soft">
-              <Text style={styles.statValue}>🔥 {todayCalories}</Text>
+            <ClayCard tint="cloud" depth="sm" radius={20} padding={12} glow="soft">
+              <Text style={[styles.statValue, { color: clayTints.blaze.accent }]}>🔥 {todayCalories}</Text>
               <Text style={styles.statLabel}>kcal burned</Text>
             </ClayCard>
-            <ClayCard tint="eggsy" depth="sm" radius={20} padding={12} glow="soft">
-              <Text style={[styles.statValue, { color: clayTints.eggsy.ink }]}>⚡ {today.length}</Text>
-              <Text style={[styles.statLabel, { color: clayTints.eggsy.ink }]}>sessions</Text>
+            <ClayCard tint="cloud" depth="sm" radius={20} padding={12} glow="soft">
+              <Text style={styles.statValue}>⚡ {today.length}</Text>
+              <Text style={styles.statLabel}>sessions</Text>
             </ClayCard>
           </View>
         </ClayCard>
@@ -133,7 +133,7 @@ export function WorkoutScreen() {
           {WORKOUT_PRESETS.map((p) => (
             <ClayCard
               key={p.id}
-              tint={p.tint}
+              tint="cloud"
               depth="md"
               radius={22}
               padding={0}
@@ -144,7 +144,7 @@ export function WorkoutScreen() {
               contentStyle={styles.tileFace}
             >
               <Text style={styles.tileEmoji}>{p.emoji}</Text>
-              <Text style={[styles.tileLabel, { color: clayTints[p.tint].ink }]}>{p.label}</Text>
+              <Text style={styles.tileLabel}>{p.label}</Text>
             </ClayCard>
           ))}
         </View>
@@ -198,13 +198,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: typography.fonts.display,
     fontSize: 22,
-    color: '#FFFFFF',
+    color: clay.ink.primary,
   },
   statLabel: {
     fontFamily: typography.fonts.displayMedium,
     fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.9,
+    color: clay.ink.secondary,
   },
   grid: {
     flexDirection: 'row',
@@ -226,6 +225,7 @@ const styles = StyleSheet.create({
   tileLabel: {
     fontFamily: typography.fonts.displaySemibold,
     fontSize: 13,
+    color: clay.ink.primary,
   },
   row: {
     flexDirection: 'row',

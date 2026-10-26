@@ -3,9 +3,9 @@
  * @description PulseFit "Today" dashboard – clay 3D edition.
  *
  *  - Pulse hero with the daily score
- *  - 2×2 metric cards (tap to jump to the matching screen)
- *  - One-tap water from the home screen
- *  - Coach quote bubble, streak strip and recent activity
+ *  - Daily quests: reacting companions, progress and quick-log buttons
+ *  - Funny coach quote at the top (tap for another)
+ *  - Streak strip and recent activity
  *
  * Data is offline-first via useDashboardData (reloads on focus).
  */
@@ -15,7 +15,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   BounceIn,
-  ClayButton,
   ClayCard,
   ClayIcon,
   ClayLabel,
@@ -27,51 +26,19 @@ import {
 import { Companion } from '../../components/mascot/Companion';
 import type { CompanionMood } from '../../components/mascot/types';
 import { useDashboardData, useDailyScore, useGreeting, useStreak } from '../../features/dashboard';
-import type { MetricProgress } from '../../features/dashboard';
+import { QuestRow } from '../../features/dashboard/components/QuestRow';
 import { WaterRepository } from '../../features/hydration/services/WaterRepository';
 import { QuoteService } from '../../services/QuoteService';
-import { clay, clayTints, ClayTint } from '../../theme/clay';
+import { clay } from '../../theme/clay';
 import { typography } from '../../theme/typography';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useToast } from '../../hooks/useToast';
 
-const METRIC_STYLE: Record<string, { tint: ClayTint; route: string }> = {
-  calories: { tint: 'blaze', route: '/(tabs)/nutrition' },
-  protein: { tint: 'eggsy', route: '/(tabs)/nutrition' },
-  water: { tint: 'droppy', route: '/(tabs)/water' },
-  workout: { tint: 'pulse', route: '/(tabs)/workout' },
-};
-
-const fmtMl = (ml: number) => (ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`);
-
-const MetricCard: React.FC<{ metric: MetricProgress; onPress: () => void }> = ({ metric, onPress }) => {
-  const { tint } = METRIC_STYLE[metric.id] ?? { tint: 'pulse' as ClayTint };
-  const t = clayTints[tint];
-  const value = metric.id === 'water' ? fmtMl(metric.current) : metric.current.toLocaleString();
-  const goal = metric.id === 'water' ? fmtMl(metric.goal) : `${metric.goal.toLocaleString()} ${metric.unit}`;
-  return (
-    <ClayCard
-      tint="cloud"
-      depth="md"
-      radius={26}
-      padding={14}
-      onPress={onPress}
-      accessibilityLabel={`${metric.label}: ${value} of ${goal}`}
-      style={styles.metric}
-      contentStyle={{ gap: 8 }}
-    >
-      <View style={styles.metricTop}>
-        <ClayIcon emoji={metric.icon} tint={tint} size={38} />
-        <Text style={[styles.metricPct, { color: t.accent }]}>{metric.percentage}%</Text>
-      </View>
-      <ClayLabel>{metric.label}</ClayLabel>
-      <View style={styles.metricValueRow}>
-        <ClayTitle size={22} color={t.accent}>{value}</ClayTitle>
-        <ClayLabel style={{ fontSize: 11 }}> / {goal}</ClayLabel>
-      </View>
-      <ClayProgressBar percentage={metric.percentage} tint={tint} height={12} />
-    </ClayCard>
-  );
+const METRIC_ROUTE: Record<string, string> = {
+  calories: '/(tabs)/nutrition',
+  protein: '/(tabs)/nutrition',
+  water: '/(tabs)/water',
+  workout: '/(tabs)/workout',
 };
 
 export default function HomeScreen() {
@@ -80,13 +47,13 @@ export default function HomeScreen() {
   const toast = useToast();
   const greeting = useGreeting();
   const streak = useStreak();
-  const [quote, setQuote] = useState(() => QuoteService.getTimeBasedQuote());
+  const [quote, setQuote] = useState(() => QuoteService.getFunnyQuote());
 
-  const { userName, metrics, caloriesPct, proteinPct, waterPct, workoutPct, waterGoal, recentActivity, isLoading, refresh } =
+  const { userName, metrics, caloriesPct, proteinPct, waterPct, workoutPct, recentActivity, isLoading, refresh } =
     useDashboardData();
   const score = useDailyScore({ caloriesPct, proteinPct, waterPct, workoutPct });
 
-  const waterMetric = metrics.find((m) => m.id === 'water');
+  const questsDone = metrics.filter((m) => m.percentage >= 100).length;
   const mood: CompanionMood = score.score >= 80 ? 'celebrate' : score.score >= 35 ? 'wave' : 'idle';
 
   const quickWater = useCallback(
@@ -99,6 +66,19 @@ export default function HomeScreen() {
     },
     [haptics, toast, refresh, streak]
   );
+
+  const quickAdd = (id: string) => {
+    switch (id) {
+      case 'water':
+        quickWater(250);
+        break;
+      case 'workout':
+        router.navigate({ pathname: '/(tabs)/workout', params: { log: String(Date.now()) } });
+        break;
+      default:
+        router.push('/food/add');
+    }
+  };
 
   const header = (
     <View style={styles.header}>
@@ -120,6 +100,25 @@ export default function HomeScreen() {
 
   return (
     <ClayScreen header={header} refreshing={isLoading} onRefresh={refresh}>
+      {/* Funny quote of the moment */}
+      <BounceIn>
+        <ClayCard
+          tint="cloud"
+          depth="md"
+          radius={24}
+          padding={16}
+          onPress={() => setQuote(QuoteService.getFunnyQuote(quote.id))}
+          accessibilityLabel="Show another quote"
+          contentStyle={styles.quoteRow}
+        >
+          <Text style={styles.quoteEmoji}>😂</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.quote}>{quote.text}</Text>
+            <ClayLabel style={{ marginTop: 6, fontSize: 11 }}>Tap for another one 🔄</ClayLabel>
+          </View>
+        </ClayCard>
+      </BounceIn>
+
       {/* Hero: daily score with Pulse */}
       <BounceIn>
         <ClayCard tint="pulse" depth="lg" radius={34} padding={20} glow="strong">
@@ -135,7 +134,7 @@ export default function HomeScreen() {
             <Companion id="pulse" mood={mood} size={118} />
           </View>
           <View style={{ marginTop: 12 }}>
-            <ClayProgressBar percentage={score.score} tint="eggsy" height={16} />
+            <ClayProgressBar percentage={score.score} tint="pulse" height={16} />
           </View>
           <View style={styles.streakStrip}>
             <Text style={styles.streakText}>🔥 {streak.current}-day streak</Text>
@@ -144,73 +143,27 @@ export default function HomeScreen() {
         </ClayCard>
       </BounceIn>
 
-      {/* Metrics */}
+      {/* Daily quests */}
       <BounceIn delay={80}>
-        <ClaySectionHeader title="Today's progress" subtitle="Tap a card to log more" />
-        <View style={styles.grid}>
-          {metrics.map((m) => (
-            <MetricCard
-              key={m.id}
-              metric={m}
-              onPress={() => router.navigate((METRIC_STYLE[m.id]?.route ?? '/(tabs)/home') as never)}
-            />
-          ))}
-        </View>
-      </BounceIn>
-
-      {/* Quick water */}
-      <BounceIn delay={140}>
-        <ClayCard tint="droppy" depth="lg" radius={30} padding={18} glow="medium">
-          <View style={styles.waterRow}>
-            <Companion id="droppy" mood={waterPct >= 100 ? 'celebrate' : 'idle'} size={72} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.waterTitle}>Sip sip, hooray!</Text>
-              <Text style={styles.waterSub}>
-                {fmtMl(waterMetric?.current ?? 0)} of {fmtMl(waterGoal)} today
-              </Text>
-            </View>
-          </View>
-          <View style={styles.waterButtons}>
-            {[250, 500].map((ml) => (
-              <ClayButton
-                key={ml}
-                label={`+${ml}ml`}
-                icon="💧"
-                tint="cloud"
-                size="sm"
-                labelStyle={{ color: clayTints.droppy.accent }}
-                style={{ flex: 1 }}
-                onPress={() => quickWater(ml)}
+        <ClaySectionHeader
+          title="Today's quests"
+          subtitle={
+            questsDone === metrics.length && metrics.length > 0
+              ? 'All quests complete! You legend 🏆'
+              : `${questsDone} of ${metrics.length} done · tap + to log`
+          }
+        />
+        <View style={styles.quests}>
+          {metrics.map((m, i) => (
+            <BounceIn key={m.id} delay={120 + i * 70}>
+              <QuestRow
+                metric={m}
+                onPress={() => router.navigate((METRIC_ROUTE[m.id] ?? '/(tabs)/home') as never)}
+                onQuickAdd={() => quickAdd(m.id)}
+                quickLabel={m.id === 'water' ? 'Add 250 ml water' : `Log ${m.label.toLowerCase()}`}
               />
-            ))}
-            <ClayButton
-              label="More"
-              tint="cloud"
-              size="sm"
-              labelStyle={{ color: clayTints.droppy.accent }}
-              style={{ flex: 1 }}
-              onPress={() => router.navigate('/(tabs)/water')}
-            />
-          </View>
-        </ClayCard>
-      </BounceIn>
-
-      {/* Coach quote */}
-      <BounceIn delay={200}>
-        <View style={styles.quoteRow}>
-          <Companion id="luna" mood="wave" size={64} />
-          <ClayCard
-            tint="cloud"
-            depth="md"
-            radius={24}
-            padding={16}
-            style={{ flex: 1 }}
-            onPress={() => setQuote(QuoteService.rotateQuote(quote.id))}
-            accessibilityLabel="Show another quote"
-          >
-            <Text style={styles.quote}>“{quote.text}”</Text>
-            <ClayLabel style={{ marginTop: 6, fontSize: 11 }}>Tap for another ✨</ClayLabel>
-          </ClayCard>
+            </BounceIn>
+          ))}
         </View>
       </BounceIn>
 
@@ -227,11 +180,7 @@ export default function HomeScreen() {
           <View style={{ gap: 10 }}>
             {recentActivity.map((a) => (
               <ClayCard key={a.id} tint="cloud" depth="sm" radius={22} padding={12} glow="soft" contentStyle={styles.activityRow}>
-                <ClayIcon
-                  emoji={a.icon}
-                  size={40}
-                  tint={a.type === 'water' ? 'droppy' : a.type === 'workout' ? 'blaze' : a.type === 'weight' ? 'luna' : 'brocco'}
-                />
+                <ClayIcon emoji={a.icon} size={40} tint="cloud" />
                 <View style={{ flex: 1 }}>
                   <ClayTitle size={15} numberOfLines={1}>{a.title}</ClayTitle>
                   <ClayLabel numberOfLines={1}>{a.detail}</ClayLabel>
@@ -257,16 +206,9 @@ const styles = StyleSheet.create({
   heroTier: { fontFamily: typography.fonts.displaySemibold, fontSize: 15, color: '#FFFFFF' },
   streakStrip: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   streakText: { fontFamily: typography.fonts.displaySemibold, fontSize: 13, color: '#FFFFFF' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  metric: { width: '47%', flexGrow: 1 },
-  metricTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  metricPct: { fontFamily: typography.fonts.display, fontSize: 15 },
-  metricValueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap' },
-  waterRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  waterTitle: { fontFamily: typography.fonts.display, fontSize: 20, color: '#FFFFFF' },
-  waterSub: { fontFamily: typography.fonts.displayMedium, fontSize: 14, color: 'rgba(255,255,255,0.92)' },
-  waterButtons: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  quoteRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  quests: { gap: 12 },
+  quoteRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  quoteEmoji: { fontSize: 30 },
   quote: { fontFamily: typography.fonts.displayMedium, fontSize: 15, color: clay.ink.primary, lineHeight: 21 },
   empty: { alignItems: 'center', gap: 8 },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

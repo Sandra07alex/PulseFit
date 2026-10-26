@@ -26,6 +26,31 @@ export const BUILTIN_QUOTES: Quote[] = [
   { id: 'f8', category: 'Funny', text: 'Working out is like washing dishes: annoying while doing it, great when finished.', author: 'Pulse Coach' },
   { id: 'f9', category: 'Funny', text: 'I follow a strict diet: if it looks delicious, I track it!', author: 'Pulse Coach' },
   { id: 'f10', category: 'Funny', text: 'Leg day is proof that physics applies to human pain.', author: 'Gym Humor' },
+  { id: 'f11', category: 'Funny', text: "That dress in your wardrobe won't fit by itself. Let's help it out! 👗", author: 'Pulse Coach' },
+  { id: 'f12', category: 'Funny', text: "Your favourite jeans are waiting. Don't leave them on read. 👖", author: 'Pulse Coach' },
+  { id: 'f13', category: 'Funny', text: "Abs are made in the kitchen… sadly, so is cake. 🎂", author: 'Pulse Coach' },
+  { id: 'f14', category: 'Funny', text: "Wedding season is coming and your outfit has trust issues. 💃", author: 'Pulse Coach' },
+  { id: 'f15', category: 'Funny', text: "The pizza will still be there tomorrow. Your goals won't wait forever. 🍕", author: 'Pulse Coach' },
+  { id: 'f16', category: 'Funny', text: "Squats today = that party dress fitting perfectly = everyone asking your secret. 😏", author: 'Pulse Coach' },
+  { id: 'f17', category: 'Funny', text: "Your future self called. They said thanks for the salad. 🥗", author: 'Pulse Coach' },
+  { id: 'f18', category: 'Funny', text: "Chips are not a vegetable, even if potatoes are. 🥔", author: 'Pulse Coach' },
+  { id: 'f19', category: 'Funny', text: "Netflix asked “Are you still watching?” Your body is asking the same thing. 📺", author: 'Pulse Coach' },
+  { id: 'f20', category: 'Funny', text: "Running late counts as cardio, but let's do the real thing too. 🏃", author: 'Pulse Coach' },
+  { id: 'f21', category: 'Funny', text: "You can't buy happiness, but you can buy jeans one size smaller soon. 🛍️", author: 'Pulse Coach' },
+  { id: 'f22', category: 'Funny', text: "Mirror, mirror on the wall, did I drink enough water at all? 🪞", author: 'Pulse Coach' },
+  { id: 'f23', category: 'Funny', text: "Your bed loves you, but your goals love you more. Get up! 🛏️", author: 'Pulse Coach' },
+  { id: 'f24', category: 'Funny', text: "“Desserts” is “stressed” spelled backwards. Go for a walk instead. 🍰", author: 'Pulse Coach' },
+  { id: 'f25', category: 'Funny', text: "Calories don't count if no one sees you eat them. Pulse sees you. 👀", author: 'Pulse Coach' },
+  { id: 'f26', category: 'Funny', text: "Every rep is one step closer to “Wow, did you lose weight?” 💪", author: 'Pulse Coach' },
+  { id: 'f27', category: 'Funny', text: "Biryani is life, but so is fitting into your favourite kurta. 🍛", author: 'Pulse Coach' },
+  { id: 'f28', category: 'Funny', text: "Today's sweat is tomorrow's “Oh, this old thing? Fits perfectly.” 😎", author: 'Pulse Coach' },
+  { id: 'f29', category: 'Funny', text: "Skipping the gym again? Your membership is starting to feel like a donation. 💸", author: 'Pulse Coach' },
+  { id: 'f30', category: 'Funny', text: "Hydrate like your selfie lighting depends on it. 📸", author: 'Pulse Coach' },
+  { id: 'f31', category: 'Funny', text: "Your goal outfit is in the closet, slowly losing hope. Go rescue it! 🦸", author: 'Pulse Coach' },
+  { id: 'f32', category: 'Funny', text: "Shake it off… preferably with 20 minutes of cardio. 🎶", author: 'Pulse Coach' },
+  { id: 'f33', category: 'Funny', text: "If you don't move today, your sofa wins again. Don't let the sofa win. 🛋️", author: 'Pulse Coach' },
+  { id: 'f34', category: 'Funny', text: "Fries are temporary. Fitting into that dress at the reunion is forever. 🍟", author: 'Pulse Coach' },
+  { id: 'f35', category: 'Funny', text: "The only thing you should be dropping this week is a few kilos, not your plans. ⚖️", author: 'Pulse Coach' },
 
   // Workout (12)
   { id: 'w1', category: 'Workout', text: 'Push yourself, because no one else is going to do it for you.', author: 'Pulse Trainer' },
@@ -171,6 +196,12 @@ class QuoteServiceImpl {
     }
     this.lastQuoteIndex = nextIndex;
     return BUILTIN_QUOTES[nextIndex];
+  }
+
+  /** A random funny quote, never the same one twice in a row */
+  getFunnyQuote(currentId?: string): Quote {
+    const list = this.getQuotesByCategory('Funny').filter((q) => q.id !== currentId);
+    return list[Math.floor(Math.random() * list.length)] ?? BUILTIN_QUOTES[0];
   }
 
   getTimeBasedQuote(): Quote {

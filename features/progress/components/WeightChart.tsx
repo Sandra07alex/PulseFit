@@ -7,7 +7,7 @@ import type { WeightLog } from '../../../types/models';
 
 const HEIGHT = 170;
 const PAD = { top: 18, bottom: 26, left: 8, right: 8 };
-const t = clayTints.luna;
+const t = clayTints.pulse;
 
 function shortDate(key: string): string {
   const [, m, d] = key.split('-').map(Number);

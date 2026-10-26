@@ -37,7 +37,8 @@ const NavTab: React.FC<{ tab: TabItem; active: boolean; onPress: () => void }> =
     Animated.spring(pop, { toValue: active ? 1 : 0, tension: 180, friction: 10, useNativeDriver: true }).start();
   }, [active, pop]);
 
-  const tint = tab.tint ?? 'pulse';
+  // Every tab shares the brand lavender so the bar stays calm
+  const tint = 'pulse' as const;
   const translateY = pop.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
   const bubbleScale = pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
 

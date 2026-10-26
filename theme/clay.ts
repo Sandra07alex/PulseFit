@@ -100,10 +100,10 @@ export const clayTints: Record<ClayTint, ClayTintTokens> = {
 
 export const clay = {
   /** Full-screen pastel backdrop gradient (top → bottom) */
-  background: ['#F1ECFF', '#FDF0F7', '#E9F8F4'] as const,
+  background: ['#F3F0FF', '#FAF9FF', '#EFEBFF'] as const,
 
   /** Floating decorative bubbles drawn behind content */
-  bubbles: ['#C9BDFF', '#FFC7DD', '#B9EEDB', '#FFE6A6', '#B7E8FF'] as const,
+  bubbles: ['#D8CFFF', '#E4DEFF', '#CDC2FF', '#E9E4FF', '#DAD2FF'] as const,
 
   ink: {
     primary: '#2E2350',

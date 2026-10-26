@@ -32,7 +32,7 @@ import { useHaptics } from '../../../hooks/useHaptics';
 import { useToast } from '../../../hooks/useToast';
 import { confirmAction } from '../../../utils/confirm';
 import { shortTime } from '../../../utils/date';
-import { clayTints } from '../../../theme/clay';
+import { clay, clayTints } from '../../../theme/clay';
 import { typography } from '../../../theme/typography';
 import type { WaterLog } from '../../../types/models';
 
@@ -117,7 +117,7 @@ const CustomAmountSheet: React.FC<{
 
 const LogRow: React.FC<{ log: WaterLog; onDelete: () => void }> = ({ log, onDelete }) => (
   <ClayCard tint="cloud" depth="sm" radius={22} padding={12} glow="soft" contentStyle={styles.row}>
-    <ClayIcon emoji="💧" tint="droppy" size={40} />
+    <ClayIcon emoji="💧" tint="cloud" size={40} />
     <View style={{ flex: 1 }}>
       <ClayTitle size={17} color={DROPPY.accent}>{fmt(log.amountMl)}</ClayTitle>
       <ClayLabel>{shortTime(log.loggedAt)}</ClayLabel>
@@ -180,7 +180,7 @@ export function WaterScreen() {
             <ClayLabel>Today's intake</ClayLabel>
             <ClayTitle size={38} color={DROPPY.accent}>{fmt(totalMl)}</ClayTitle>
             <ClayLabel style={{ marginTop: -4 }}>of {fmt(goalMl)} goal</ClayLabel>
-            <ClayCard tint={done ? 'brocco' : 'droppy'} depth="sm" radius={18} padding={10} glow="soft" style={{ marginTop: 12 }}>
+            <ClayCard tint="cloud" depth="sm" radius={18} padding={10} glow="soft" style={{ marginTop: 12 }}>
               <Text style={styles.pillValue}>{done ? '🎉 Done!' : `${fmt(remainingMl)} to go`}</Text>
               <Text style={styles.pillLabel}>
                 {percentage}% · {Math.floor(totalMl / 250)} glasses
@@ -197,7 +197,7 @@ export function WaterScreen() {
           {QUICK_AMOUNTS.map((q) => (
             <ClayCard
               key={q.ml}
-              tint="droppy"
+              tint="cloud"
               depth="md"
               radius={22}
               padding={0}
@@ -260,12 +260,12 @@ const styles = StyleSheet.create({
   pillValue: {
     fontFamily: typography.fonts.display,
     fontSize: 17,
-    color: '#FFFFFF',
+    color: DROPPY.accent,
   },
   pillLabel: {
     fontFamily: typography.fonts.displayMedium,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.92)',
+    color: clay.ink.secondary,
   },
   grid: {
     flexDirection: 'row',
@@ -285,12 +285,12 @@ const styles = StyleSheet.create({
   tileAmount: {
     fontFamily: typography.fonts.display,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: DROPPY.accent,
   },
   tileLabel: {
     fontFamily: typography.fonts.displayMedium,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.9)',
+    color: clay.ink.secondary,
   },
   presets: {
     flexDirection: 'row',

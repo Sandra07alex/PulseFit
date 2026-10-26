@@ -12,6 +12,9 @@ import {
 import type { NewWorkout } from '../hooks/useWorkouts';
 import type { WorkoutIntensity } from '../../../types/models';
 
+/** The Move screen uses a single coral accent */
+const ACCENT_TINT = 'blaze' as const;
+
 export interface LogWorkoutSheetProps {
   visible: boolean;
   initialPreset?: WorkoutPreset;
@@ -42,7 +45,7 @@ export const LogWorkoutSheet: React.FC<LogWorkoutSheetProps> = ({
 
   const duration = Math.min(600, Math.max(0, parseInt(minutes, 10) || 0));
   const kcal = duration > 0 ? estimateCalories({ category: preset.category, durationMinutes: duration, intensity }) : 0;
-  const accent = clayTints[preset.tint].accent;
+  const accent = clayTints[ACCENT_TINT].accent;
 
   const save = async () => {
     if (duration <= 0) return;
@@ -65,7 +68,7 @@ export const LogWorkoutSheet: React.FC<LogWorkoutSheetProps> = ({
               key={p.id}
               label={p.label}
               emoji={p.emoji}
-              tint={p.tint}
+              tint={ACCENT_TINT}
               selected={p.id === preset.id}
               onPress={() => setPreset(p)}
             />
@@ -80,7 +83,7 @@ export const LogWorkoutSheet: React.FC<LogWorkoutSheetProps> = ({
             <ClayChip
               key={m}
               label={`${m} min`}
-              tint={preset.tint}
+              tint={ACCENT_TINT}
               selected={duration === m}
               onPress={() => setMinutes(String(m))}
             />
@@ -92,7 +95,7 @@ export const LogWorkoutSheet: React.FC<LogWorkoutSheetProps> = ({
           keyboardType="number-pad"
           maxLength={3}
           suffix="minutes"
-          tint={preset.tint}
+          tint={ACCENT_TINT}
           accessibilityLabel="Workout duration in minutes"
         />
       </View>
@@ -105,7 +108,7 @@ export const LogWorkoutSheet: React.FC<LogWorkoutSheetProps> = ({
               key={o.value}
               label={o.label}
               emoji={o.emoji}
-              tint={preset.tint}
+              tint={ACCENT_TINT}
               selected={intensity === o.value}
               onPress={() => setIntensity(o.value)}
             />
@@ -120,7 +123,7 @@ export const LogWorkoutSheet: React.FC<LogWorkoutSheetProps> = ({
       <ClayButton
         label="Save workout"
         icon="✅"
-        tint={preset.tint}
+        tint={ACCENT_TINT}
         size="lg"
         fullWidth
         loading={saving}

@@ -69,7 +69,7 @@ const WeightSheet: React.FC<{
         <View style={{ flex: 1 }}>
           <ClayInput
             big
-            tint="luna"
+            tint="pulse"
             value={value}
             onChangeText={(v) => setValue(v.replace(/[^0-9.,]/g, ''))}
             keyboardType="decimal-pad"
@@ -86,7 +86,7 @@ const WeightSheet: React.FC<{
       <ClayButton
         label="Save weight"
         icon="✅"
-        tint="luna"
+        tint="pulse"
         size="lg"
         fullWidth
         disabled={!valid}
@@ -165,7 +165,7 @@ export function ProgressScreen() {
     >
       {/* Streak */}
       <BounceIn>
-        <ClayCard tint="bubblegum" depth="lg" radius={32} padding={20} glow="strong">
+        <ClayCard tint="pulse" depth="lg" radius={32} padding={20} glow="strong">
           <View style={styles.streakTop}>
             <Text style={styles.streakFlame}>🔥</Text>
             <View style={{ flex: 1 }}>
@@ -191,7 +191,7 @@ export function ProgressScreen() {
           <View style={styles.weightStats}>
             <View style={styles.weightStat}>
               <ClayLabel>Now</ClayLabel>
-              <ClayTitle size={24} color={clayTints.luna.accent}>{currentWeight.toFixed(1)}</ClayTitle>
+              <ClayTitle size={24} color={clayTints.pulse.accent}>{currentWeight.toFixed(1)}</ClayTitle>
             </View>
             <View style={styles.weightStat}>
               <ClayLabel>Change</ClayLabel>
@@ -199,11 +199,11 @@ export function ProgressScreen() {
             </View>
             <View style={styles.weightStat}>
               <ClayLabel>To goal</ClayLabel>
-              <ClayTitle size={24} color={clayTints.brocco.accent}>{toGo === 0 ? '🎉' : toGo}</ClayTitle>
+              <ClayTitle size={24} color={clayTints.pulse.accent}>{toGo === 0 ? '🎉' : toGo}</ClayTitle>
             </View>
           </View>
           <WeightChart logs={weights} target={targetWeight} />
-          <ClayButton label="Log weight" icon="⚖️" tint="luna" fullWidth onPress={() => setSheetOpen(true)} />
+          <ClayButton label="Log weight" icon="⚖️" tint="pulse" fullWidth onPress={() => setSheetOpen(true)} />
         </ClayCard>
       </BounceIn>
 
@@ -216,7 +216,7 @@ export function ProgressScreen() {
               key={x.key}
               label={x.label}
               emoji={x.emoji}
-              tint={x.tint}
+              tint="pulse"
               selected={x.key === metric}
               onPress={() => setMetric(x.key)}
             />
@@ -224,7 +224,7 @@ export function ProgressScreen() {
         </View>
         <ClayCard tint="cloud" depth="md" radius={28} padding={18} style={{ marginTop: 12 }}>
           <ClayBars
-            tint={m.tint}
+            tint="pulse"
             goal={goalFor[metric]}
             formatValue={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v)))}
             data={week.map((d) => ({ label: weekdayInitial(d.day), value: d[metric] }))}
@@ -239,7 +239,7 @@ export function ProgressScreen() {
           {badges.map((b) => (
             <ClayCard
               key={b.id}
-              tint={b.unlocked ? b.tint : 'cloud'}
+              tint="cloud"
               depth="md"
               radius={24}
               padding={0}
@@ -251,7 +251,7 @@ export function ProgressScreen() {
               <Text style={styles.badgeEmoji}>{b.unlocked ? b.emoji : '🔒'}</Text>
               <Text
                 numberOfLines={1}
-                style={[styles.badgeTitle, { color: b.unlocked ? clayTints[b.tint].ink : clay.ink.secondary }]}
+                style={[styles.badgeTitle, { color: b.unlocked ? clayTints.pulse.accent : clay.ink.secondary }]}
               >
                 {b.title}
               </Text>

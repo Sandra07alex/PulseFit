@@ -77,7 +77,7 @@ export const QuickActionRadialMenu: React.FC<QuickActionRadialMenuProps> = ({
               style={[styles.item, { transform: [{ translateX }, { translateY }, { scale }] }]}
             >
               <ClayCard
-                tint={action.tint}
+                tint="cloud"
                 depth="md"
                 radius={36}
                 padding={0}
@@ -92,7 +92,7 @@ export const QuickActionRadialMenu: React.FC<QuickActionRadialMenuProps> = ({
                 <Companion id={action.companionId} mood="wave" size={48} animated={false} />
               </ClayCard>
               <View style={styles.labelPill}>
-                <Text style={[styles.label, { color: clayTints[action.tint].accent }]}>
+                <Text style={[styles.label, { color: clayTints.pulse.accent }]}>
                   {action.icon} {action.label}
                 </Text>
               </View>
